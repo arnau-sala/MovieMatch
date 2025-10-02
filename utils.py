@@ -2,32 +2,28 @@ import requests
 import os
 from typing import List, Dict, Optional
 
+# Se han eliminado todas las referencias a iconos y custom_icons
+
 class TMDBClient:
     """Cliente para interactuar con la API de The Movie Database (TMDB)"""
-    
     def __init__(self, api_key: str):
         self.api_key = api_key
         self.base_url = "https://api.themoviedb.org/3"
         self.image_base_url = "https://image.tmdb.org/t/p"
-    
+
     def _make_request(self, endpoint: str, params: Dict = None) -> Dict:
         """Realizar petición a la API de TMDB con manejo robusto de errores"""
         if params is None:
             params = {}
-        
         params['api_key'] = self.api_key
-        
         try:
             response = requests.get(f"{self.base_url}{endpoint}", params=params, timeout=10)
             response.raise_for_status()
-            
-            # Verificar si la respuesta es JSON válida
             try:
                 return response.json()
             except ValueError as e:
                 print(f"Error al decodificar JSON: {e}")
                 return {"error": "Respuesta no válida del servidor"}
-                
         except requests.exceptions.Timeout:
             print("Error: Tiempo de espera agotado al conectar con TMDB")
             return {"error": "timeout"}
@@ -210,15 +206,7 @@ def format_rating(rating: float) -> str:
     return f"{stars} {rating}/10"
 
 
-def format_rating_html(rating: float) -> str:
-    """Formatear rating con iconos HTML"""
-    if rating == 0:
-        return "Sin puntuación"
-    
-    # Import inside function to avoid circular imports
-    from custom_icons import get_custom_icon_html
-    stars = get_custom_icon_html('star', size=14) * int(rating // 2)
-    return f"{stars} {rating}/10"
+
 
 
 def format_runtime(runtime: int) -> str:
