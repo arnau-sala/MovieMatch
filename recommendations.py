@@ -7,7 +7,7 @@ from typing import List, Dict
 def show_recommendations_page(tmdb: TMDBClient):
     """Página del sistema de recomendaciones"""
     
-    st.markdown("# Sistema de Recomendaciones Inteligente")
+         st.markdown("# Sistema de Recomendaciones Inteligente")
     
     # Método de recomendación
     recommendation_method = st.selectbox(
@@ -20,16 +20,16 @@ def show_recommendations_page(tmdb: TMDBClient):
         ]
     )
     
-    if recommendation_method == "Basado en una película que te gustó":
+         if recommendation_method == "Basado en una película que te gustó":
         show_movie_based_recommendations(tmdb)
     
-    elif recommendation_method == "Basado en géneros favoritos":
+         elif recommendation_method == "Basado en géneros favoritos":
         show_genre_based_recommendations(tmdb)
     
-    elif recommendation_method == "Basado en tus preferencias":
+         elif recommendation_method == "Basado en tus preferencias":
         show_preference_based_recommendations(tmdb)
     
-    elif recommendation_method == "Mezcla aleatoria personalizada":
+         elif recommendation_method == "Mezcla aleatoria personalizada":
         show_random_mix_recommendations(tmdb)
 
 
@@ -118,32 +118,23 @@ def show_movie_based_recommendations(tmdb: TMDBClient):
                                         cols = st.columns(3)
                                         for i, movie in enumerate(unique_recommendations[:12]):
                                             with cols[i % 3]:
-                                                def display_recommendation_card(movie, tmdb):
-                                                    formatted_movie = format_movie_info(movie)
-                                                    poster_url = tmdb.get_poster_url(formatted_movie.get('poster_path'))
-                                                    movie_id = formatted_movie['id']
-                                                    like_key = f"like_{movie_id}"
-                                                    # Layout: columna para botón y resto de tarjeta
-                                                    col_btn, col_main = st.columns([0.18, 0.82])
-                                                    with col_btn:
-                                                        liked = st.session_state.get(like_key, False)
-                                                        btn_label = "⭐" if liked else "☆"
-                                                        if st.button(btn_label, key=like_key):
-                                                            st.session_state[like_key] = not liked
-                                                    with col_main:
-                                                        st.markdown(f"<div style='background: #1e293b; border-radius: 1.1rem; padding: 1.1rem 1.1rem 0.7rem 1.1rem; margin-bottom: 1.2rem; box-shadow: 0 2px 12px #0002; position: relative;'>", unsafe_allow_html=True)
-                                                        if poster_url:
-                                                            st.image(poster_url, width=180)
-                                                        st.markdown(f"<div style='font-size: 1.15rem; font-weight: 700; color: #e2e8f0; margin-top: 0.5rem;'>{formatted_movie['title']}</div>", unsafe_allow_html=True)
-                                                        st.markdown(f"<div style='font-size: 0.98rem; color: #94a3b8; margin-bottom: 0.3rem;'>{formatted_movie.get('release_date', '')[:4]}</div>", unsafe_allow_html=True)
-                                                        st.markdown(f"<div style='font-size: 0.98rem; color: #fbbf24; font-weight: 600;'>{format_rating(formatted_movie.get('vote_average', 0))}</div>", unsafe_allow_html=True)
-                                                        st.markdown(f"<div style='font-size: 0.98rem; color: #94a3b8; margin-bottom: 0.3rem;'>{formatted_movie.get('overview', '')[:120]}...</div>", unsafe_allow_html=True)
-                                                        # Botón de detalles
-                                                        if st.button("Ver detalles", key=f"rec_{movie_id}", type="secondary"):
-                                                            st.session_state[f"show_details_{movie_id}"] = True
-                                                        if st.session_state.get(f"show_details_{movie_id}", False):
-                                                            show_movie_details_popup(movie_id, tmdb)
-                                                        st.markdown("</div>", unsafe_allow_html=True)
+                                                display_recommendation_card(movie, tmdb)
+                                    else:
+                                        st.warning("No se encontraron recomendaciones para esta película.")
+
+                def show_genre_based_recommendations(tmdb: TMDBClient):
+                    st.markdown("### Descubre películas por géneros")
+                    genres = tmdb.get_genres()
+                    selected_genres = st.multiselect(
+                        "Selecciona géneros:",
+                        [genre['name'] for genre in genres]
+                    )
+                    sort_by = st.selectbox("Ordenar por:", ["Popularidad", "Puntuación", "Fecha de lanzamiento"])
+                    min_year = st.number_input("Año mínimo:", min_value=1900, max_value=2100, value=2000)
+                    min_rating = st.slider("Puntuación mínima:", 0.0, 10.0, 6.0, 0.1)
+                    if selected_genres:
+                        genre_ids = [genre['id'] for genre in genres if genre['name'] in selected_genres]
+                        sort_mapping = {
                             "Popularidad": "popularity.desc",
                             "Puntuación": "vote_average.desc",
                             "Fecha de lanzamiento": "release_date.desc"
