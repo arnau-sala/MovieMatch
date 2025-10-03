@@ -446,6 +446,7 @@ def show_profile_modal():
             movie_id = movie['id']
             title = movie['title']
             # Solo obtener el user_id si ya existe en localStorage
+            
             # Usar el user_id ya guardado en session_state si existe
             user_id = user_id_global
             if not user_id:
