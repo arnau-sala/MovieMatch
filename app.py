@@ -1,15 +1,33 @@
-﻿
-import os
-import uuid
-import json
+﻿user_id_global = None
 
-# --- Backend: gestión de usuario anónimo y datos ---
+import os
+import json
+import random
+import string
+import streamlit as st
+from streamlit_js_eval import streamlit_js_eval
+
 USER_DATA_PATH = os.path.join(os.path.dirname(__file__), 'user_data.json')
 
-def get_user_id():
-    if 'user_id' not in st.session_state:
-        st.session_state.user_id = str(uuid.uuid4())
-    return st.session_state.user_id
+def get_user_id(suffix=None):
+    key = f"get_user_id{suffix}" if suffix else "get_user_id"
+    # Control de intentos para evitar ciclo infinito
+    intentos = st.session_state.get("user_id_intentos", 0)
+    user_id = streamlit_js_eval(js_expressions='localStorage.getItem("moviematch_user_id")', key=key)
+    if not user_id:
+        if intentos < 3:
+            st.session_state["user_id_intentos"] = intentos + 1
+            with st.spinner("Esperando ID persistente de usuario..."):
+                # Solo la primera vez, generamos y guardamos el ID en localStorage y esperamos 100ms antes de rerun
+                streamlit_js_eval(js_expressions='if (!localStorage.getItem("moviematch_user_id")) { localStorage.setItem("moviematch_user_id", (Math.random().toString(36).substr(2, 4))); await new Promise(r => setTimeout(r, 100)); }', key=f"force_set_user_id{suffix if suffix else ''}")
+                st.rerun()
+        else:
+            st.error("No se pudo obtener el ID de usuario tras varios intentos. Verifica que tu navegador permite localStorage y recarga la página.")
+            return None
+    else:
+        st.session_state["user_id_intentos"] = 0
+    st.session_state.user_id = user_id
+    return user_id
 
 def load_user_data():
     try:
@@ -18,24 +36,33 @@ def load_user_data():
         return data
     except Exception as e:
         st.error(f"Error loading user data: {e}")
-        return {"users": {}}
+        return {}
 
 def save_user_data(data):
+    import sys
+    print("[DEBUG] Guardando datos en user_data.json:", data, file=sys.stderr)
     with open(USER_DATA_PATH, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2)
 
 def get_user_profile():
-    user_id = get_user_id()
+    user_id = get_user_id(suffix="_profile")
+    if not user_id:
+        with st.spinner("Cargando perfil de usuario..."):
+            st.stop()
     data = load_user_data()
-    if user_id not in data["users"]:
-        data["users"][user_id] = {"preferences": [], "searches": []}
+    # Solo crear el usuario si no existe y solo al entrar
+    if user_id not in data:
+        data[user_id] = {"preferences": [], "searches": [], "ratings": []}
         save_user_data(data)
-    return data["users"][user_id]
+    return data[user_id]
 
 def update_user_profile(profile):
-    user_id = get_user_id()
+    user_id = get_user_id(suffix="_update_profile")
     data = load_user_data()
-    data["users"][user_id] = profile
+    if user_id not in data:
+        # No crear usuario aquí, solo actualizar si existe
+        return
+    data[user_id] = profile
     save_user_data(data)
 import streamlit as st
 from dotenv import load_dotenv
@@ -351,54 +378,110 @@ import streamlit as st
 # Pantalla de perfil como modal de pantalla completa
 def show_profile_modal():
     import streamlit as st
-    background_color = "#0f172a"
-    st.markdown(
-        f'''
-        <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: {background_color}; z-index: 9999; display: flex; align-items: center; justify-content: center;">
-            <div style="width: 1300px; min-width: 320px; padding: 2.5rem 2rem; border-radius: 28px; box-shadow: 0 8px 48px rgba(0,0,0,0.18); background: transparent; display: flex; flex-direction: row; align-items: flex-start; justify-content: center; gap: 3.5rem;">
-                <div style="flex:1; min-width:340px; display: flex; flex-direction: column; align-items: center;">
-                    <h2 style="text-align:center; color:#fff; margin-bottom:0.7rem; font-size:2.1rem;">Favorite Genres</h2>
-                    <form style="width:100%; display: flex; flex-direction: column; align-items: center;">
-                        <span style="color:#b3b3b3; font-size:0.98rem; margin-bottom:0.3rem; text-align:center; display:block;">Hold CTRL/CMD to select multiple options</span>
-                        <select multiple size="12" style="width:50%;margin-bottom:1.5rem;padding:0.7rem;border-radius:10px;border:1px solid #ccc;background:#222;color:#fff;font-size:1.15rem;min-height:0;max-height:none; text-align:center; line-height:5;">
-                            <option>Action</option>
-                            <option>Adventure</option>
-                            <option>Animation</option>
-                            <option>Family</option>
-                            <option>Comedy</option>
-                            <option>Drama</option>
-                            <option>Horror</option>
-                            <option>Science Fiction</option>
-                            <option>Thriller</option>
-                            <option>Mystery</option>
-                            <option>Romance</option>
-                            <option>Documentary</option>
-                        </select><br>
-                        <button type="button" style="width:60%;padding:0.8rem;background:#6366f1;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:1.25rem;">Save (not functional)</button>
-                    </form>
-                </div>
-                <div style="flex:1; min-width:340px;">
-                    <h2 style="text-align:center; color:#fff; margin-bottom:2rem; font-size:2.1rem;">Watched Movie & Rating</h2>
-                    <form style="width:100%;">
-                        <input type="text" placeholder="Search movie..." style="width:100%;margin-bottom:1rem;padding:0.7rem;border-radius:10px;border:1px solid #ccc;background:#222;color:#fff;font-size:1rem;">
-                        <select style="width:100%;margin-bottom:1rem;padding:0.7rem;border-radius:10px;border:1px solid #ccc;background:#222;color:#fff;font-size:1rem;">
-                            <option disabled selected>Select a movie</option>
-                            <option>Example 1</option>
-                            <option>Example 2</option>
-                            <option>Example 3</option>
-                        </select><br>
-                        <label style="font-weight:600;color:#fff;font-size:1rem;">Rating</label><br>
-                        <div style="display:flex; align-items:center; width:100%; margin-bottom:1.2rem;">
-                            <span style="color:#b3b3b3; font-size:1rem; margin-right:0.7rem;">0</span>
-                            <input type="range" min="0" max="10" step="0.5" value="5" style="flex:1; margin:0 0.7rem;">
-                            <span style="color:#b3b3b3; font-size:1rem; margin-left:0.7rem;">10</span>
-                        </div>
-                        <button type="button" style="width:100%;padding:0.8rem;background:#6366f1;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:1rem;">Add rating (not functional)</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        ''', unsafe_allow_html=True)
+    genre_list = [
+        "Action", "Adventure", "Animation", "Family", "Comedy", "Drama", "Horror",
+        "Science Fiction", "Thriller", "Mystery", "Romance", "Documentary"
+    ]
+    global user_id_global
+    if user_id_global is None:
+        user_id_global = get_user_id()
+    user_id = user_id_global
+    try:
+        data = load_user_data()
+        current_prefs = data.get(user_id, {}).get("preferences", [])
+    except Exception:
+        current_prefs = []
+    st.markdown("## Favorite Genres", unsafe_allow_html=True)
+    st.markdown('<span style="color:#b3b3b3; font-size:0.98rem;">Click to select your favorite genres.</span>', unsafe_allow_html=True)
+    selected_genres = []
+    num_cols = 4
+    genre_cols = st.columns(num_cols)
+    for row in range(3):
+        for col in range(num_cols):
+            idx = row * num_cols + col
+            if idx < len(genre_list):
+                with genre_cols[col]:
+                    genre = genre_list[idx]
+                    if st.checkbox(genre, value=(genre in current_prefs), key=f"profile_genre_{genre}"):
+                        selected_genres.append(genre)
+    if set(selected_genres) != set(current_prefs):
+        try:
+            data = load_user_data()
+            if user_id not in data:
+                data[user_id] = {"preferences": [], "searches": [], "ratings": []}
+            data[user_id]["preferences"] = selected_genres
+            save_user_data(data)
+        except Exception as e:
+            st.error(f"Error saving preferences: {e}")
+    st.markdown("---")
+    st.markdown("## Watched Movies and Rating", unsafe_allow_html=True)
+    # Movie search
+    if "reset_search" not in st.session_state:
+        st.session_state["reset_search"] = False
+    if "reset_rating" not in st.session_state:
+        st.session_state["reset_rating"] = False
+
+    search_query = st.text_input("Search movie...", value="" if st.session_state["reset_search"] else None, key="profile_search_movie")
+    movie_options = []
+    movie_map = {}
+    if search_query:
+        # Search movies using TMDB
+        try:
+            from utils import TMDBClient
+            tmdb_api_key = os.getenv("TMDB_API_KEY")
+            tmdb = TMDBClient(tmdb_api_key)
+            results = tmdb.search_movies(search_query)
+            for movie in results[:3]:
+                title = f"{movie['title']} ({movie.get('release_date', '')[:4]})"
+                movie_options.append(title)
+                movie_map[title] = movie
+        except Exception as e:
+            st.error(f"Error searching movies: {e}")
+    selected_movie = st.selectbox("Select a movie", movie_options, key="profile_select_movie")
+    rating = st.slider("Rating", min_value=0.0, max_value=10.0, value=5.0 if st.session_state["reset_rating"] else 5.0, step=0.5, key="profile_rating")
+    if st.button("Save", key="profile_add_rating"):
+        # Comprobación previa: mostrar el user_id si existe antes de guardar
+        if selected_movie and selected_movie in movie_map:
+            movie = movie_map[selected_movie]
+            movie_id = movie['id']
+            title = movie['title']
+            # Solo obtener el user_id si ya existe en localStorage
+            # Usar el user_id ya guardado en session_state si existe
+            user_id = user_id_global
+            if not user_id:
+                st.error("No se encontró el ID de usuario en session_state. Recarga la página o revisa la configuración del navegador.")
+                return
+            data = load_user_data()
+            profile = data.get(user_id, {"preferences": [], "searches": [], "ratings": []})
+            # Evitar duplicados: si ya existe una puntuación para ese movie_id, la actualizamos
+            ratings = profile.get("ratings", [])
+            found = False
+            for r in ratings:
+                if r.get("movie_id") == movie_id:
+                    r["rating"] = rating
+                    found = True
+                    break
+            if not found:
+                ratings.append({"movie_id": movie_id, "title": title, "rating": rating})
+            profile["ratings"] = ratings
+            data[user_id] = profile
+            save_user_data(data)
+        else:
+            st.warning("Select a valid movie before saving.")
+    # Show watched movies list
+    user_id = get_user_id(suffix="_list_ratings")
+    data = load_user_data()
+    profile = data.get(user_id, {"preferences": [], "searches": [], "ratings": []})
+    ratings = profile.get("ratings", [])
+    if ratings:
+        st.markdown("### Watched Movies List")
+        import pandas as pd
+        df = pd.DataFrame(ratings)
+        df_watched = df[["title", "rating"]].rename(columns={"title": "Movie", "rating": "Rating"})
+        df_watched["Rating"] = df_watched["Rating"].map(lambda x: f"{x:.1f}")
+        df_watched.index = df_watched.index + 1
+        styled_df = df_watched.style.set_properties(subset=["Rating"], **{"text-align": "left"})
+        st.dataframe(styled_df, width=800)
 
 # Estado para mostrar pantalla de perfil
 if "show_profile" not in st.session_state:
@@ -416,7 +499,7 @@ if st.session_state["show_profile"]:
     if st.session_state.get("volver_click", False):
         st.session_state["show_profile"] = False
         st.session_state["volver_click"] = False
-    if "volver" in st.experimental_get_query_params():
+    if "volver" in st.query_params:
         st.session_state["show_profile"] = False
 else:
     # ...contenido principal de la app...
