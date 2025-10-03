@@ -350,38 +350,50 @@ import streamlit as st
 
 # Pantalla de perfil como modal de pantalla completa
 def show_profile_modal():
-    # Color de fondo normal de Streamlit (por defecto: #0f172a)
+    import streamlit as st
     background_color = "#0f172a"
     st.markdown(
         f'''
         <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: {background_color}; z-index: 9999; display: flex; align-items: center; justify-content: center;">
-            <div style="width: 100%; max-width: 400px; padding: 2rem; border-radius: 18px; box-shadow: 0 4px 32px rgba(0,0,0,0.12); background: transparent;">
-                <h2 style="text-align:center; color:#fff; margin-bottom:1.5rem;">Perfil de Usuario</h2>
-                <form>
-                    <label for="nombre" style="font-weight:600;color:#fff;">Nombre</label><br>
-                    <input id="nombre" name="nombre" type="text" style="width:100%;margin-bottom:1rem;padding:0.5rem;border-radius:8px;border:1px solid #ccc;background:#222;color:#fff;"><br>
-                    <label for="edad" style="font-weight:600;color:#fff;">Edad</label><br>
-                    <input id="edad" name="edad" type="number" min="0" max="120" style="width:100%;margin-bottom:1rem;padding:0.5rem;border-radius:8px;border:1px solid #ccc;background:#222;color:#fff;"><br>
-                    <label for="email" style="font-weight:600;color:#fff;">Email</label><br>
-                    <input id="email" name="email" type="email" style="width:100%;margin-bottom:1rem;padding:0.5rem;border-radius:8px;border:1px solid #ccc;background:#222;color:#fff;"><br>
-                    <label style="font-weight:600;color:#fff;">Géneros favoritos</label><br>
-                    <select multiple style="width:100%;margin-bottom:1rem;padding:0.5rem;border-radius:8px;border:1px solid #ccc;background:#222;color:#fff;">
-                        <option>Acción</option>
-                        <option>Aventura</option>
-                        <option>Comedia</option>
-                        <option>Drama</option>
-                        <option>Fantasía</option>
-                        <option>Terror</option>
-                        <option>Romance</option>
-                        <option>Ciencia Ficción</option>
-                        <option>Thriller</option>
-                        <option>Animación</option>
-                    </select><br>
-                    <button type="button" style="width:100%;padding:0.7rem;background:#6366f1;color:#fff;border:none;border-radius:8px;font-weight:700;">Guardar (no funcional)</button>
-                </form>
-                <div style="text-align:center;margin-top:1.5rem;">
-                    <form method="post">
-                        <button type="submit" name="volver" style="padding:0.5rem 1.2rem;background:#6366f1;color:#fff;border:none;border-radius:8px;font-weight:600;">Volver</button>
+            <div style="width: 1300px; min-width: 320px; padding: 2.5rem 2rem; border-radius: 28px; box-shadow: 0 8px 48px rgba(0,0,0,0.18); background: transparent; display: flex; flex-direction: row; align-items: flex-start; justify-content: center; gap: 3.5rem;">
+                <div style="flex:1; min-width:340px; display: flex; flex-direction: column; align-items: center;">
+                    <h2 style="text-align:center; color:#fff; margin-bottom:0.7rem; font-size:2.1rem;">Favorite Genres</h2>
+                    <form style="width:100%; display: flex; flex-direction: column; align-items: center;">
+                        <span style="color:#b3b3b3; font-size:0.98rem; margin-bottom:0.3rem; text-align:center; display:block;">Hold CTRL/CMD to select multiple options</span>
+                        <select multiple size="12" style="width:50%;margin-bottom:1.5rem;padding:0.7rem;border-radius:10px;border:1px solid #ccc;background:#222;color:#fff;font-size:1.15rem;min-height:0;max-height:none; text-align:center; line-height:5;">
+                            <option>Action</option>
+                            <option>Adventure</option>
+                            <option>Animation</option>
+                            <option>Family</option>
+                            <option>Comedy</option>
+                            <option>Drama</option>
+                            <option>Horror</option>
+                            <option>Science Fiction</option>
+                            <option>Thriller</option>
+                            <option>Mystery</option>
+                            <option>Romance</option>
+                            <option>Documentary</option>
+                        </select><br>
+                        <button type="button" style="width:60%;padding:0.8rem;background:#6366f1;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:1.25rem;">Save (not functional)</button>
+                    </form>
+                </div>
+                <div style="flex:1; min-width:340px;">
+                    <h2 style="text-align:center; color:#fff; margin-bottom:2rem; font-size:2.1rem;">Watched Movie & Rating</h2>
+                    <form style="width:100%;">
+                        <input type="text" placeholder="Search movie..." style="width:100%;margin-bottom:1rem;padding:0.7rem;border-radius:10px;border:1px solid #ccc;background:#222;color:#fff;font-size:1rem;">
+                        <select style="width:100%;margin-bottom:1rem;padding:0.7rem;border-radius:10px;border:1px solid #ccc;background:#222;color:#fff;font-size:1rem;">
+                            <option disabled selected>Select a movie</option>
+                            <option>Example 1</option>
+                            <option>Example 2</option>
+                            <option>Example 3</option>
+                        </select><br>
+                        <label style="font-weight:600;color:#fff;font-size:1rem;">Rating</label><br>
+                        <div style="display:flex; align-items:center; width:100%; margin-bottom:1.2rem;">
+                            <span style="color:#b3b3b3; font-size:1rem; margin-right:0.7rem;">0</span>
+                            <input type="range" min="0" max="10" step="0.5" value="5" style="flex:1; margin:0 0.7rem;">
+                            <span style="color:#b3b3b3; font-size:1rem; margin-left:0.7rem;">10</span>
+                        </div>
+                        <button type="button" style="width:100%;padding:0.8rem;background:#6366f1;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:1rem;">Add rating (not functional)</button>
                     </form>
                 </div>
             </div>
