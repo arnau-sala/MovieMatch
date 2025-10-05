@@ -16,6 +16,7 @@ class TMDBClient:
         if params is None:
             params = {}
         params['api_key'] = self.api_key
+        params['region'] = 'ES'
         try:
             response = requests.get(f"{self.base_url}{endpoint}", params=params, timeout=10)
             response.raise_for_status()

@@ -1,4 +1,20 @@
-﻿user_id_global = None
+﻿def save_search_and_update_patterns(user_id, data, tmdb):
+    from recommendations import enrich_single_pattern
+    searches = data[user_id].get("searches", [])
+    if searches:
+        last_search = searches[-1]
+        movie_id = last_search.get("movie_id")
+        patterns = data[user_id].get("profile_patterns", {
+            "directors": {}, "actors": {}, "countries": {}, "genres": {}, "companies": {}, "languages": {}
+        })
+    updated = enrich_single_pattern(patterns, movie_id, 0.5, tmdb)
+    data[user_id]["profile_patterns"] = updated
+    save_user_data(data)
+    from recommendations import enrich_user_profile
+    enriched = enrich_user_profile(data[user_id], tmdb)
+    data[user_id]["profile_patterns"] = enriched
+    save_user_data(data)
+user_id_global = None
 
 import os
 import json
@@ -41,6 +57,15 @@ def update_user_profile(profile):
         # No crear usuario aquí, solo actualizar si existe
         return
     data[user_id] = profile
+    
+    # Actualizar profile_patterns tras guardar búsqueda
+    try:
+        from recommendations import enrich_user_profile
+        tmdb_api_key = os.getenv("TMDB_API_KEY")
+        tmdb = TMDBClient(tmdb_api_key)
+        save_search_and_update_patterns(user_id, data, tmdb)
+    except Exception as e:
+        print(f"Error updating profile_patterns after search: {e}")
     save_user_data(data)
 import streamlit as st
 from dotenv import load_dotenv
@@ -451,6 +476,19 @@ def show_profile_modal():
                 ratings.append({"movie_id": movie_id, "title": title, "rating": rating})
             profile["ratings"] = ratings
             data[user_id] = profile
+            tmdb_api_key = os.getenv("TMDB_API_KEY")
+            tmdb = TMDBClient(tmdb_api_key)
+            from recommendations import enrich_single_pattern
+            ratings = data[user_id].get("ratings", [])
+            if ratings:
+                last_rating = ratings[-1]
+                movie_id = last_rating.get("movie_id")
+                weight = float(last_rating.get("rating", 0)) / 10
+                patterns = data[user_id].get("profile_patterns", {
+                    "directors": {}, "actors": {}, "countries": {}, "genres": {}, "companies": {}, "languages": {}
+                })
+                updated = enrich_single_pattern(patterns, movie_id, weight, tmdb)
+                data[user_id]["profile_patterns"] = updated
             save_user_data(data)
         else:
             st.warning("Select a valid movie before saving.")
@@ -590,26 +628,37 @@ else:
                     best_match = entry
                     best_score = 1.0
                     break
-            # Buscar el nombre oficial y el ID de la película en TMDB
-            tmdb_results = tmdb.search_movies(search_query)
-            official_name = None
-            official_id = None
-            if tmdb_results and 'title' in tmdb_results[0]:
-                official_name = tmdb_results[0]['title']
-                official_id = tmdb_results[0].get('id')
+            # Usar el primer renderizado (filtered_results[0]) para guardar el id y nombre
+            filtered_results = [m for m in tmdb.search_movies(search_query) if m.get('popularity', 0) > 2 and m.get('release_date')]
+            render_name = None
+            render_id = None
+            if filtered_results:
+                render_name = filtered_results[0].get('title')
+                render_id = filtered_results[0].get('id')
             now_iso = datetime.now().isoformat()
-            # Si hay coincidencia similar y el nombre oficial es diferente, actualiza el término guardado, el id y la fecha
             if best_match:
                 best_match["count"] += 1
                 best_match["last_search"] = now_iso
-                if official_name and best_match["term"].lower() != official_name.lower():
-                    best_match["term"] = official_name
-                if official_id:
-                    best_match["movie_id"] = official_id
+                if render_name and best_match["term"].lower() != render_name.lower():
+                    best_match["term"] = render_name
+                if render_id:
+                    best_match["movie_id"] = render_id
             else:
-                term_to_save = official_name if official_name else search_query
-                searches.append({"term": term_to_save, "count": 1, "movie_id": official_id, "last_search": now_iso})
+                term_to_save = render_name if render_name else search_query
+                searches.append({"term": term_to_save, "count": 1, "movie_id": render_id, "last_search": now_iso})
             data[user_id]["searches"] = searches
+            # Enriquecer patrones solo con la última búsqueda
+            from recommendations import enrich_single_pattern
+            patterns = data[user_id].get("profile_patterns", {
+                "directors": {}, "actors": {}, "countries": {}, "genres": {}, "companies": {}, "languages": {}
+            })
+            last_search = searches[-1] if searches else None
+            if last_search:
+                movie_id = last_search.get("movie_id")
+                tmdb_api_key = os.getenv("TMDB_API_KEY")
+                tmdb_local = TMDBClient(tmdb_api_key)
+                updated = enrich_single_pattern(patterns, movie_id, 0.5, tmdb_local)
+                data[user_id]["profile_patterns"] = updated
             save_user_data(data)
         results = tmdb.search_movies(search_query)
         filtered_results = [m for m in results if m.get('popularity', 0) > 2 and m.get('release_date')]
@@ -620,26 +669,35 @@ else:
             from utils import TMDBClient
             tmdb_api_key = os.getenv("TMDB_API_KEY")
             tmdb_local = TMDBClient(tmdb_api_key)
+            # Solo obtener detalles completos para el primer renderizado
+            first_details = tmdb_local.get_movie_details(filtered_results[0].get('id')) if filtered_results[0].get('id') else filtered_results[0]
             for i in range(num_cards):
                 movie = filtered_results[i]
                 col = cols[1 + (i % 3) * 2]
                 with col:
-                    details = tmdb_local.get_movie_details(movie.get('id')) if movie.get('id') else movie
+                    if i == 0:
+                        details = first_details
+                    else:
+                        details = movie
                     title = details.get('title', movie.get('title', 'Unknown'))
                     year = details.get('release_date', '')[:4] if details.get('release_date') else ''
                     poster_url = details.get('poster_path')
-                    runtime = details.get('runtime')
-                    genres = details.get('genres')
+                    runtime = details.get('runtime') if i == 0 else None
+                    genres = details.get('genres') if i == 0 else None
                     nota = details.get('vote_average')
                     duration = f"{runtime} min" if runtime else ''
                     genre_html = ''
                     genre_spans = ''
-                    if isinstance(genres, list) and genres:
+                    # Mostrar géneros si existen, si no mostrar 'Not available' en todos los casos
+                    if i == 0 and isinstance(genres, list) and genres:
                         genre_spans = ''.join([f'<span style="background:#23234a;color:#fff;padding:0.3em 0.8em;border-radius:16px;font-size:0.95em;display:inline-block;">{g["name"]}</span>' for g in genres if 'name' in g])
+                    elif i > 0 and isinstance(movie.get('genre_ids'), list) and movie.get('genre_ids'):
+                        # Si hay genre_ids, mostrar como 'Not available' (no hay nombres)
+                        genre_spans = ''
                     if genre_spans:
                         genre_html = f'<div style="margin-top:0.7rem;display:flex;justify-content:center;flex-wrap:wrap;gap:0.5rem;">{genre_spans}</div>'
                     else:
-                        genre_html = '<div style="margin-top:0.7rem;color:#94a3b8;text-align:center;font-size:0.95em;">No disponible</div>'
+                        genre_html = '<div style="margin-top:0.7rem;color:#94a3b8;text-align:center;font-size:0.95em;">Not available</div>'
                     nota_html = ''
                     if nota is not None:
                         if nota == 0:
