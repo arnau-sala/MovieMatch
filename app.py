@@ -5,29 +5,7 @@ import json
 import random
 import string
 import streamlit as st
-from streamlit_js_eval import streamlit_js_eval
-
-USER_DATA_PATH = os.path.join(os.path.dirname(__file__), 'user_data.json')
-
-def get_user_id(suffix=None):
-    key = f"get_user_id{suffix}" if suffix else "get_user_id"
-    # Control de intentos para evitar ciclo infinito
-    intentos = st.session_state.get("user_id_intentos", 0)
-    user_id = streamlit_js_eval(js_expressions='localStorage.getItem("moviematch_user_id")', key=key)
-    if not user_id:
-        if intentos < 3:
-            st.session_state["user_id_intentos"] = intentos + 1
-            with st.spinner("Esperando ID persistente de usuario..."):
-                # Solo la primera vez, generamos y guardamos el ID en localStorage y esperamos 100ms antes de rerun
-                streamlit_js_eval(js_expressions='if (!localStorage.getItem("moviematch_user_id")) { localStorage.setItem("moviematch_user_id", (Math.random().toString(36).substr(2, 4))); await new Promise(r => setTimeout(r, 100)); }', key=f"force_set_user_id{suffix if suffix else ''}")
-                st.rerun()
-        else:
-            st.error("No se pudo obtener el ID de usuario tras varios intentos. Verifica que tu navegador permite localStorage y recarga la página.")
-            return None
-    else:
-        st.session_state["user_id_intentos"] = 0
-    st.session_state.user_id = user_id
-    return user_id
+from user_utils import get_user_id, USER_DATA_PATH
 
 def load_user_data():
     try:
@@ -375,7 +353,8 @@ import streamlit as st
 # ...existing code...
 
 
-# Pantalla de perfil como modal de pantalla completa
+from movie_display import display_movies
+
 def show_profile_modal():
     import streamlit as st
     genre_list = [
@@ -402,9 +381,15 @@ def show_profile_modal():
             if idx < len(genre_list):
                 with genre_cols[col]:
                     genre = genre_list[idx]
-                    if st.checkbox(genre, value=(genre in current_prefs), key=f"profile_genre_{genre}"):
+                    checked = st.checkbox(
+                        genre,
+                        value=(genre in current_prefs),
+                        key=f"profile_genre_{genre}_{user_id}"
+                    )
+                    if checked:
                         selected_genres.append(genre)
-    if set(selected_genres) != set(current_prefs):
+    # Guardar automáticamente solo si la selección no está vacía y ha cambiado
+    if selected_genres and set(selected_genres) != set(current_prefs):
         try:
             data = load_user_data()
             if user_id not in data:
@@ -488,22 +473,77 @@ def show_profile_modal():
 if "show_profile" not in st.session_state:
     st.session_state["show_profile"] = False
 
-col_nav1, col_nav2 = st.columns([1, 8])
+
+# --- Navegación entre Profile y Main Menu ---
+
+
+# --- Navegación entre Profile y Main Menu con cambio inmediato ---
+if "show_profile" not in st.session_state:
+    st.session_state["show_profile"] = False
+col_nav2, col_nav1 = st.columns([8, 1])
 with col_nav1:
-    if st.button("Perfil", key="btn_perfil"):
-        st.session_state["show_profile"] = True
+    if st.session_state["show_profile"]:
+        if st.button("Main Menu", key="btn_back_main"):
+            st.session_state["show_profile"] = False
+    else:
+        if st.button("Profile", key="btn_profile"):
+            st.session_state["show_profile"] = True
 
 if st.session_state["show_profile"]:
-    # Botón de retorno funcional con Streamlit
-    import streamlit as st
     show_profile_modal()
+    # Logic to exit profile (if needed)
     if st.session_state.get("volver_click", False):
         st.session_state["show_profile"] = False
         st.session_state["volver_click"] = False
     if "volver" in st.query_params:
         st.session_state["show_profile"] = False
+    # --- Botón de política de privacidad solo en modo perfil ---
+    st.markdown("<div style='height:4rem'></div>", unsafe_allow_html=True)
+    if 'show_privacy' not in st.session_state:
+        st.session_state['show_privacy'] = False
+    if st.button("Privacy Policy", key="btn_privacy_profile"):
+        st.session_state['show_privacy'] = not st.session_state['show_privacy']
+    if st.session_state['show_privacy']:
+        st.markdown("""
+        <div style='background:#181826;border-radius:10px;padding:1.2rem 1.5rem;margin:2.5rem 0 0 0;box-shadow:0 2px 12px #0002;'>
+            <h4 style='color:#fff;margin-bottom:0.7rem;'>Privacy Policy</h4>
+            <div style='color:#cbd5e1;font-size:1rem;'>
+                <p><strong>Your privacy and data security are our top priorities.</strong></p>
+                <ul style='margin-bottom:1.2rem;'>
+                    <li><strong>Anonymous & Confidential:</strong> All data is stored anonymously and securely. No personal information or identifiers are ever collected or linked to you.</li>
+                    <li><strong>Device Independence & Security:</strong> Each device and browser is completely independent. Your data is only stored locally and cannot be accessed from other devices or browsers. This method is the safest and means you never need to create an account—your data is never associated with any person.</li>
+                    <li><strong>Purpose of Data:</strong> The only reason your data is stored is to enable the AI-powered recommendation system to adapt to your preferences and improve your experience.</li>
+                    <li><strong>Types of Data Stored:</strong>
+                        <ul>
+                            <li>Favorite genres (your selected movie genres)</li>
+                            <li>Searches made using the main page search bar</li>
+                            <li>Watched and rated movies</li>
+                        </ul>
+                    </li>
+                    <li><strong>Freedom to Delete Your Data:</strong> You are always free to delete your data. To do so, simply remove the MovieMatch key from your browser's local storage (safe storage). <br><br>
+                        <em>How to delete your data:</em>
+                        <ul>
+                            <li>Open your browser's developer tools (usually by pressing F12).</li>
+                            <li>Go to the <strong>Application</strong> or <strong>Storage</strong> tab.</li>
+                            <li>Find <strong>localStorage</strong> and look for the key named <strong>moviematch_user_id</strong>.</li>
+                            <li>Delete this key. All your data will be removed instantly.</li>
+                        </ul>
+                        <span style='opacity:0.7;'>Note: Each time you visit the page, a new anonymous key will be created automatically.</span>
+                        <span style='opacity:0.7;'>Deleting your data only affects the current device and browser.</span>
+                    </li>
+                    <li><strong>No Third Parties & No Ads:</strong> There are no third-party services, trackers, or advertising on this website. Your data is never shared, sold, or used for any purpose other than providing personalized recommendations.</li>
+                    <li><strong>No Option to Deny Usage:</strong> The tool requires data to function. You cannot opt out of data usage, but you can always delete your information as described above.</li>
+                    <li><strong>Policy Updates:</strong> If the way your data is handled ever changes, this privacy policy will be updated to reflect those changes.</li>
+                </ul>
+                <p style='margin-top:1.2rem;'>Everything is handled with maximum security and anonymity.</p>
+                <p style='margin-top:0.8rem;'>All movie information is sourced via the TMDB API (The Movie Database). No movie data is stored locally; it is fetched in real time from TMDB.</p>
+                <p style='margin-top:0.8rem;'>If you have any questions about your data or privacy, feel free to contact the developer at: <strong>arnausalaaraujo@gmail.com</strong></p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 else:
-    # ...contenido principal de la app...
+    # Main app content (filters, recommendations, etc.)
+    # Todo el contenido principal debe ir dentro de este bloque
     st.markdown('''
     <div style="text-align: center; margin-bottom: 3rem;">
         <h1 style="font-size: 4rem; font-weight: 800; color: #ffffff; margin-bottom: 0.5rem; 
@@ -518,195 +558,190 @@ else:
     </div>
     ''', unsafe_allow_html=True)
 
-    # Centered search bar - clean and simple
+
+    # Centered search bar - funcional e independiente
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        search_query = st.text_input("Search Movies", placeholder="Type a movie name...", label_visibility="collapsed")
-        if search_query:
-            pass
+        search_query = st.text_input("Search Movies", placeholder="Type a movie name...", label_visibility="collapsed", key="main_search")
 
-    # ...resto del contenido de películas y navegación principal...
-st.markdown('<div style="margin: 3rem 0;"></div>', unsafe_allow_html=True)
+    # Mostrar resultados de búsqueda solo si hay búsqueda activa, sin modificar el estado de los filtros
+    if search_query:
+        # Guardar búsqueda en el perfil del usuario
+        import difflib
+        from datetime import datetime
+        def similar(a, b):
+            return difflib.SequenceMatcher(None, a, b).ratio()
 
-
-# Custom CSS for active button
-st.markdown('''
-<style>
-.stButton > button.active-btn {
-    background: #23234a !important;
-    color: #fff !important;
-    border: 1.5px solid #6366f1 !important;
-    font-weight: 600 !important;
-    box-shadow: 0 0 0 2px #23234a33;
-    transition: background 0.2s, border 0.2s;
-}
-.stButton > button:not(.active-btn):hover {
-    border: 1.5px solid #6366f1 !important;
-    background: #23234a !important;
-    color: #fff !important;
-}
-
-</style>
-''', unsafe_allow_html=True)
-
-# Subtle separator and section title above navigation buttons
-st.markdown('''
-<div style="margin-top: 1.2rem; margin-bottom: 0.7rem;">
-    <hr style="border:none;height:1px;background:rgba(120,120,180,0.12);margin-bottom:0.4rem;">
-    <h3 style="font-family: 'Poppins', sans-serif; font-size: 1.08rem; font-weight: 500; color: #bfc7d5; text-align: center; margin-bottom: 0.1rem; letter-spacing: 0.01em;">
-        Filtered Search
-    </h3>
-</div>
-''', unsafe_allow_html=True)
-
-def nav_button(label, key, page_name):
-    is_active = st.session_state.current_page == page_name
-    btn_class = "active-btn" if is_active else ""
-    btn_html = f"""
-    <button class='{btn_class}' style='width:100%;height:3.5rem;border-radius:8px;background:#1e293b;color:#e2e8f0;border:1px solid #334155;font-weight:500;font-size:0.85rem;transition:all 0.2s cubic-bezier(0.4,0,0.2,1);letter-spacing:0.01em;'>{label}</button>
-    """
-    clicked = st.markdown(f"<div onclick=\"document.getElementById('{key}').click();\">{btn_html}</div>", unsafe_allow_html=True)
-    if st.button(label, key=key):
-        if page_name == 'random':
-            st.session_state.current_page = 'random'
-            st.session_state.random_movie_idx = random.randint(0, 999999)
-        elif is_active:
-            st.session_state.current_page = 'home'
-        else:
-            st.session_state.current_page = page_name
-
-col_space1, col1, col_gap1, col2, col_gap2, col3, col_gap3, col4, col_gap4, col5, col_gap5, col6, col_gap6, col7, col_space2 = st.columns([0.29, 1, 0.2, 1, 0.2, 1, 0.2, 1, 0.2, 1, 0.2, 1, 0.2, 1, 0.41])
-
-with col1:
-    nav_button("Popular Movies", "popular", "popular")
-with col2:
-    nav_button("Now Playing", "now_playing", "now_playing")
-with col3:
-    nav_button("Top Rated", "top_rated", "top_rated")
-with col4:
-    nav_button("Coming Soon", "coming_soon", "coming_soon")
-with col5:
-    nav_button("By Genre", "by_genre", "by_genre")
-with col6:
-    nav_button("AI Recommendations", "ai_recs", "ai_recommendations")
-with col7:
-    nav_button("Random Pick", "random", "random")
-
-# Function to display movies in a professional format
-
-def display_movies(movies, title):
-    if movies:
-        st.markdown(f'''
-        <div style="margin-top: 3rem; margin-bottom: 2rem;"></div>
-        ''', unsafe_allow_html=True)
-        cards_per_row = 3
-        total_rows = (min(len(movies), 12) + cards_per_row - 1) // cards_per_row
-        loader_style = """
-        <style>
-        @keyframes dotFade { 0% { opacity: 0.15; } 20% { opacity: 0.5; } 40% { opacity: 0.15; } 100% { opacity: 0.15; } }
-        .dot-loader span { animation: dotFade 1.2s infinite; font-size:1.1em; color:#888; letter-spacing:0.2em; }
-        </style>
-        """
-        loader_html = "<div style='width:100%;display:flex;justify-content:center;align-items:center;margin:0.7rem 0;'><span class='dot-loader'><span>●</span> <span>●</span> <span>●</span></span></div>" + loader_style
-        loader_placeholder = st.empty()
-        loader_shown = False
-        for row_idx in range(total_rows):
-            start = row_idx * cards_per_row
-            end = start + cards_per_row
-            row_movies = movies[start:end]
-            if not loader_shown:
-                loader_placeholder.markdown(loader_html, unsafe_allow_html=True)
-                loader_shown = True
-            row_loader_placeholder = st.empty()
-            if row_idx == 0:
-                loader_placeholder.empty()
-                row_loader_placeholder.markdown(loader_html, unsafe_allow_html=True)
+        user_id = get_user_id()
+        data = load_user_data()
+        if user_id:
+            if user_id not in data:
+                data[user_id] = {"preferences": [], "searches": [], "ratings": []}
+            searches = data[user_id].get("searches", [])
+            best_match = None
+            best_score = 0.0
+            for entry in searches:
+                term = entry.get("term", "").lower()
+                score = similar(term, search_query.lower())
+                if score > 0.8 and score > best_score:
+                    best_match = entry
+                    best_score = score
+                if term == search_query.lower():
+                    best_match = entry
+                    best_score = 1.0
+                    break
+            # Buscar el nombre oficial y el ID de la película en TMDB
+            tmdb_results = tmdb.search_movies(search_query)
+            official_name = None
+            official_id = None
+            if tmdb_results and 'title' in tmdb_results[0]:
+                official_name = tmdb_results[0]['title']
+                official_id = tmdb_results[0].get('id')
+            now_iso = datetime.now().isoformat()
+            # Si hay coincidencia similar y el nombre oficial es diferente, actualiza el término guardado, el id y la fecha
+            if best_match:
+                best_match["count"] += 1
+                best_match["last_search"] = now_iso
+                if official_name and best_match["term"].lower() != official_name.lower():
+                    best_match["term"] = official_name
+                if official_id:
+                    best_match["movie_id"] = official_id
             else:
-                row_loader_placeholder.markdown(loader_html, unsafe_allow_html=True)
-            row_details = []
-            for fetch_idx, movie in enumerate(row_movies):
-                detail = tmdb.get_movie_details(movie['id']) if 'id' in movie else movie
-                row_details.append(detail)
-            row_loader_placeholder.empty()
+                term_to_save = official_name if official_name else search_query
+                searches.append({"term": term_to_save, "count": 1, "movie_id": official_id, "last_search": now_iso})
+            data[user_id]["searches"] = searches
+            save_user_data(data)
+        results = tmdb.search_movies(search_query)
+        filtered_results = [m for m in results if m.get('popularity', 0) > 2 and m.get('release_date')]
+        st.markdown(f"<div style='margin-top:2rem;'><h3 style='color:#fff;'>Search Results for: <span style='color:#4f46e5'>{search_query}</span></h3></div>", unsafe_allow_html=True)
+        if filtered_results:
             cols = st.columns([0.01, 0.32, 0.01, 0.32, 0.01, 0.32, 0.01])
-            for idx, details in enumerate(row_details):
-                col_idx = 1 + idx * 2
-                with cols[col_idx]:
-                    movie = row_movies[idx]
-                    poster_url = tmdb.get_poster_url(details.get('poster_path'))
+            num_cards = min(len(filtered_results), 15)
+            from utils import TMDBClient
+            tmdb_api_key = os.getenv("TMDB_API_KEY")
+            tmdb_local = TMDBClient(tmdb_api_key)
+            for i in range(num_cards):
+                movie = filtered_results[i]
+                col = cols[1 + (i % 3) * 2]
+                with col:
+                    details = tmdb_local.get_movie_details(movie.get('id')) if movie.get('id') else movie
+                    title = details.get('title', movie.get('title', 'Unknown'))
+                    year = details.get('release_date', '')[:4] if details.get('release_date') else ''
+                    poster_url = details.get('poster_path')
                     runtime = details.get('runtime')
                     genres = details.get('genres')
-                    year = details.get('release_date', '')[:4] if details.get('release_date') else ''
-                    duration = f"{runtime} min" if runtime else ''
                     nota = details.get('vote_average')
-                    if nota is not None:
-                        if nota >= 7:
-                            nota_color = '#22c55e'
-                        elif nota >= 5:
-                            nota_color = '#f59e42'
-                        else:
-                            nota_color = '#ef4444'
-                        nota_html = f"<span style='color:{nota_color};font-weight:600;'>{nota}</span>"
-                    else:
-                        nota_html = ''
-                    stats_html = f"<div style='font-size:1.05em;margin-bottom:0.5em;text-align:center;'>{year} &nbsp;|&nbsp; {duration} &nbsp;|&nbsp; {nota_html}</div>"
-                    providers_html = ''
-                    try:
-                        import requests
-                        api_key = tmdb.api_key
-                        movie_id = details.get('id')
-                        if movie_id:
-                            url = f"https://api.themoviedb.org/3/movie/{movie_id}/watch/providers?api_key={api_key}"
-                            resp = requests.get(url, timeout=5)
-                            data = resp.json()
-                            us = data.get('results', {}).get('US', {})
-                            provider_list = []
-                            for key in ['flatrate', 'rent', 'buy']:
-                                if key in us:
-                                    provider_list += us[key]
-                            if provider_list:
-                                all_platforms = []
-                                for key in ['flatrate', 'rent', 'buy']:
-                                    if key in us:
-                                        all_platforms += us[key]
-                                filtered_providers = [p for p in all_platforms if p.get('provider_name') == 'Netflix']
-                                extra = [p for p in all_platforms if ('Netflix' not in p.get('provider_name', '') and p.get('provider_name') != 'Amazon Prime Video with Ads')]
-                                provider_list = (filtered_providers + extra)[:2]
-                                if provider_list:
-                                    providers_html = '<div style="margin-bottom:0.7rem;display:flex;justify-content:center;flex-wrap:wrap;gap:0.5rem;">' + \
-                                        ''.join([f'<span style="background:#4f46e5;color:#fff;padding:0.3em 0.8em;border-radius:16px;font-size:0.95em;display:inline-block;">{p["provider_name"]}</span>' for p in provider_list if 'provider_name' in p]) + '</div>'
-                                else:
-                                    providers_html = '<div style="margin-bottom:0.7rem;text-align:center;color:#f59e42;font-size:1em;">Not available right now</div>'
-                    except Exception:
-                        pass
+                    duration = f"{runtime} min" if runtime else ''
                     genre_html = ''
+                    genre_spans = ''
                     if isinstance(genres, list) and genres:
-                        genres = genres[:3]
-                        genre_html = '<div style="margin-top:0.7rem;display:flex;justify-content:center;flex-wrap:wrap;gap:0.5rem;">' + \
-                            ''.join([f'<span style="background:#23234a;color:#fff;padding:0.3em 0.8em;border-radius:16px;font-size:0.95em;display:inline-block;">{g["name"]}</span>' for g in genres if 'name' in g]) + '</div>'
-                    providers_block = providers_html if providers_html else ''
-                    genre_block = genre_html if genre_html else ''
-                    extra_info = ''
-                    if providers_block or genre_block:
-                        extra_info = f"<div style='margin-top: 0.5rem; font-size: 1rem;'>{providers_block}{genre_block}</div>"
-                    # --- Botón de preferencia ---
-
+                        genre_spans = ''.join([f'<span style="background:#23234a;color:#fff;padding:0.3em 0.8em;border-radius:16px;font-size:0.95em;display:inline-block;">{g["name"]}</span>' for g in genres if 'name' in g])
+                    if genre_spans:
+                        genre_html = f'<div style="margin-top:0.7rem;display:flex;justify-content:center;flex-wrap:wrap;gap:0.5rem;">{genre_spans}</div>'
+                    else:
+                        genre_html = '<div style="margin-top:0.7rem;color:#94a3b8;text-align:center;font-size:0.95em;">No disponible</div>'
+                    nota_html = ''
+                    if nota is not None:
+                        if nota == 0:
+                            nota_html = "<span style='color:#fff;font-weight:600;'>-</span>"
+                        else:
+                            if nota >= 7:
+                                nota_color = '#22c55e'
+                            elif nota >= 5:
+                                nota_color = '#f59e42'
+                            else:
+                                nota_color = '#ef4444'
+                            nota_html = f"<span style='color:{nota_color};font-weight:600;'>{nota}</span>"
+                    stats_html = f"<div style='font-size:1.05em;margin-bottom:0.5em;text-align:center;'>{year} &nbsp;|&nbsp; {duration} &nbsp;|&nbsp; {nota_html}</div>"
+                    if poster_url:
+                        poster_html = f'<img src="{tmdb_local.get_poster_url(poster_url)}" alt="Poster" style="width: 170px; height: 255px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 12px #0002;" />'
+                    else:
+                        poster_html = '<div style="width:170px;height:255px;background:#222;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#888;">No Image</div>'
                     info_html = f"""
-                    <div class='movie-info-wrapper' style='width: 100%; height: 320px; display: flex; flex-direction: row; align-items: flex-start; justify-content: flex-start; gap: 1.2rem; padding: 1rem; margin-bottom: 2.5rem; position: relative;'>
+                    <div class='movie-info-wrapper' style='width: 100%; height: 340px; display: flex; flex-direction: row; align-items: flex-start; justify-content: flex-start; gap: 1.2rem; padding: 1rem; margin-bottom: 2.5rem;'>
                         <div style='flex-shrink:0;'>
-                            {f'<img src="{poster_url}" alt="Poster" style="width: 170px; height: 255px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 12px #0002;" />' if poster_url else '<div style="width:170px;height:255px;background:#222;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#888;">No Image</div>'}
+                            {poster_html}
                         </div>
-                        <div style='flex:1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;'>
-                            <h3 style='font-size: 1.1rem; margin: 0 0 0.5rem 0; text-align: center;'>{details.get('title', movie.get('title', ''))}</h3>
+                        <div style='flex:1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; overflow-wrap: break-word;'>
+                            <h3 style='font-size: 1.1rem; margin: 0 0 0.5rem 0; text-align: center; overflow-wrap: break-word;'>{title}</h3>
                             {stats_html}
-                            {extra_info}
+                            {genre_html}
                         </div>
                     </div>
                     """
                     st.markdown(info_html, unsafe_allow_html=True)
+        else:
+            st.info("No relevant movies found.")
+
+    # ...resto del contenido de películas y navegación principal...
+    st.markdown('<div style="margin: 3rem 0;"></div>', unsafe_allow_html=True)
+
+    # Custom CSS for active button
+    st.markdown('''
+    <style>
+    .stButton > button.active-btn {
+        background: #23234a !important;
+        color: #fff !important;
+        border: 1.5px solid #6366f1 !important;
+        font-weight: 600 !important;
+        box-shadow: 0 0 0 2px #23234a33;
+        transition: background 0.2s, border 0.2s;
+    }
+    .stButton > button:not(.active-btn):hover {
+        border: 1.5px solid #6366f1 !important;
+        background: #23234a !important;
+        color: #fff !important;
+    }
+
+    </style>
+    ''', unsafe_allow_html=True)
+
+    # Subtle separator and section title above navigation buttons
+    st.markdown('''
+    <div style="margin-top: 1.2rem; margin-bottom: 0.7rem;">
+        <hr style="border:none;height:1px;background:rgba(120,120,180,0.12);margin-bottom:0.4rem;">
+        <h3 style="font-family: 'Poppins', sans-serif; font-size: 1.08rem; font-weight: 500; color: #bfc7d5; text-align: center; margin-bottom: 0.1rem; letter-spacing: 0.01em;">
+            Filtered Search
+        </h3>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    def nav_button(label, key, page_name):
+        is_active = st.session_state.current_page == page_name
+        btn_class = "active-btn" if is_active else ""
+        btn_html = f"""
+        <button class='{btn_class}' style='width:100%;height:3.5rem;border-radius:8px;background:#1e293b;color:#e2e8f0;border:1px solid #334155;font-weight:500;font-size:0.85rem;transition:all 0.2s cubic-bezier(0.4,0,0.2,1);letter-spacing:0.01em;'>{label}</button>
+        """
+        clicked = st.markdown(f"<div onclick=\"document.getElementById('{key}').click();\">{btn_html}</div>", unsafe_allow_html=True)
+        if st.button(label, key=key):
+            if page_name == 'random':
+                st.session_state.current_page = 'random'
+                st.session_state.random_movie_idx = random.randint(0, 999999)
+            elif is_active:
+                st.session_state.current_page = 'home'
+            else:
+                st.session_state.current_page = page_name
+
+    col_space1, col1, col_gap1, col2, col_gap2, col3, col_gap3, col4, col_gap4, col5, col_gap5, col6, col_gap6, col7, col_space2 = st.columns([0.29, 1, 0.2, 1, 0.2, 1, 0.2, 1, 0.2, 1, 0.2, 1, 0.2, 1, 0.41])
+
+    with col1:
+        nav_button("Popular Movies", "popular", "popular")
+    with col2:
+        nav_button("Now Playing", "now_playing", "now_playing")
+    with col3:
+        nav_button("Top Rated", "top_rated", "top_rated")
+    with col4:
+        nav_button("Coming Soon", "coming_soon", "coming_soon")
+    with col5:
+        nav_button("By Genre", "by_genre", "by_genre")
+    with col6:
+        nav_button("AI Recommendations", "ai_recs", "ai_recommendations")
+    with col7:
+        nav_button("Random Pick", "random", "random")
+
 
 # Navigation logic: show movies based on selected page
-if st.session_state.current_page == 'home':
+if st.session_state.current_page == 'home' and not st.session_state.get('show_profile', False):
     import datetime
     with st.spinner("Loading movie of the day..."):
         popular_movies = tmdb.get_popular_movies()
@@ -945,6 +980,17 @@ elif st.session_state.current_page == 'random':
     else:
         st.error("Unable to get random movie at this time.")
 
+elif st.session_state.current_page == 'ai_recommendations':
+    st.markdown('''
+    <div style="margin-top: 2.5rem; margin-bottom: 1.2rem;">
+        <hr style="border:none;height:2px;background:rgba(79,70,229,0.25);margin-bottom:0.7rem;">
+        <h2 style="font-family: 'Poppins', sans-serif; font-size: 1.35rem; font-weight: 600; color: #e2e8f0; text-align: center; margin-bottom: 0.2rem; letter-spacing: 0.01em;">
+            AI Recommendations
+        </h2>
+    </div>
+    ''', unsafe_allow_html=True)
+    from recommendations import show_recommendations_page
+    show_recommendations_page(tmdb)
 elif st.session_state.current_page == 'by_genre':
     # Separator and title for genre filter section
     st.markdown('''
