@@ -100,18 +100,23 @@ def show_recommendations_page(tmdb: TMDBClient):
     show_ai_recommendations(tmdb)
 
 def show_ai_recommendations(tmdb: TMDBClient):
-    # Mostrar los elementos de 'languages' del perfil para depuración
+    # 1. Obtener el user_id primero
+    user_id = get_user_id()
+    st.markdown(f'**User ID activo:** `{user_id}`')
+    # 2. Abrir el JSON y acceder al perfil solo con la clave correcta
     profile = None
     try:
         with open(USER_DATA_PATH, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        profile = data.get(user_id, {})
+        if user_id in data:
+            profile = data[user_id]
+        else:
+            st.warning(f'No existe perfil para el usuario: {user_id}')
     except Exception as e:
         st.warning(f'Error al acceder a user_data.json: {e}')
+    # 3. Acceder a languages solo si existe el perfil
     languages = profile.get('profile_patterns', {}).get('languages', {}) if profile else {}
     st.markdown(f"**Languages en perfil:** {languages}")
-    user_id = get_user_id()
-    st.markdown(f'**User ID activo:** `{user_id}`')
     # Mostrar el top 50 en pantalla debajo del in progress
     top_50_lines = []
     if len(universo) > 0:
