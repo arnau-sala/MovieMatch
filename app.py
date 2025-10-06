@@ -1053,7 +1053,7 @@ elif st.session_state.current_page == 'ai_recommendations':
         ratings = profile.get('ratings', [])
         preferences = profile.get('preferences', [])
         watched_ids = set(r['movie_id'] for r in ratings)
-        actualizar_universo(tmdb, watched_ids, ratings, searches, patterns, preferences)
+        actualizar_universo(tmdb, watched_ids, ratings, searches, patterns, preferences, user_id)
         # Recalcular scored aquí para asegurar que es el array final
         from recommendations import score_movie
         scored = [(m, score_movie(m, tmdb, watched_ids, ratings, searches, patterns)) for m in universo]
