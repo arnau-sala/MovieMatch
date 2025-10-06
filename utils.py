@@ -5,6 +5,41 @@ from typing import List, Dict, Optional
 # Se han eliminado todas las referencias a iconos y custom_icons
 
 class TMDBClient:
+    def get_popular_by_pattern(self, category: str, name: str, max_count: int = 5) -> List[Dict]:
+        """Obtener películas populares filtradas por patrón (género, director, actor)"""
+        # Solo soporta 'genres', 'directors', 'actors'
+        if category == 'genres':
+            # Buscar el id del género
+            genres = self.get_genres()
+            genre_id = next((g['id'] for g in genres if g['name'].lower() == name.lower()), None)
+            if genre_id:
+                return self.discover_movies(genre_ids=[genre_id], sort_by="popularity.desc", page=1)[:max_count]
+            return []
+        elif category == 'directors' or category == 'actors':
+            # Buscar por persona (director/actor) usando /search/person y luego /person/{id}/movie_credits
+            endpoint = "/search/person"
+            params = {"query": name, "page": 1}
+            response = self._make_request(endpoint, params)
+            if "results" in response and response["results"]:
+                person_id = response["results"][0]["id"]
+                credits_endpoint = f"/person/{person_id}/movie_credits"
+                credits = self._make_request(credits_endpoint)
+                movies = []
+                if category == 'directors':
+                    # Filtrar películas donde la persona es director
+                    for m in credits.get('crew', []):
+                        if m.get('job') == 'Director':
+                            movies.append(m)
+                else:
+                    # Filtrar películas donde la persona es actor
+                    movies = credits.get('cast', [])
+                # Ordenar por popularidad y devolver los más populares
+                movies = sorted(movies, key=lambda x: x.get('popularity', 0), reverse=True)
+                return movies[:max_count]
+            return []
+        else:
+            # No soportado
+            return []
     """Cliente para interactuar con la API de The Movie Database (TMDB)"""
     def __init__(self, api_key: str):
         self.api_key = api_key

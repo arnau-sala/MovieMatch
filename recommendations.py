@@ -1,15 +1,18 @@
 import os
 import json
+# Ruta global para caché de películas
+MOVIE_CACHE_PATH = os.path.join(os.path.dirname(__file__), 'movie_cache.json')
 USER_DATA_PATH = os.path.join(os.path.dirname(__file__), 'user_data.json')
+
+
 # --- UNIVERSO DE CANDIDATAS ---
 # Mantiene y actualiza el universo de películas recomendadas (máx. 50)
 universo = []
 
-def actualizar_universo(tmdb, watched_ids, ratings, searches, patterns, preferencias):
+def actualizar_universo(tmdb, watched_ids, ratings, searches, patterns, preferencias, user_id=None):
     global universo
-    # 1. Candidatas actuales
+    print('[DEBUG] paso 1')
     actuales = universo.copy() if universo else []
-    # 2. Buscar 20 nuevos candidatos relevantes
     nuevos = set()
     # a) Similares a películas valoradas
     for r in ratings:
@@ -19,34 +22,190 @@ def actualizar_universo(tmdb, watched_ids, ratings, searches, patterns, preferen
             for m in similares:
                 if m.get('id') not in watched_ids:
                     nuevos.add(m['id'])
-    # b) Populares de patrones destacados
+    print('[DEBUG] paso 2')
     for cat, threshold, max_count in [('directors', 0.40, 5), ('actors', 0.40, 5), ('genres', 0.30, 5)]:
-        destacados = [k for k, v in patterns.get(cat, {}).items() if v / sum(patterns[cat].values()) >= threshold and sum(patterns[cat].values()) > 0]
+        if cat in patterns and sum(patterns[cat].values()) > 0:
+            destacados = [k for k, v in patterns.get(cat, {}).items() if v / sum(patterns[cat].values()) >= threshold]
+        else:
+            destacados = []
         for nombre in destacados:
             populares = tmdb.get_popular_by_pattern(cat, nombre, max_count)
             for m in populares:
                 if m.get('id') not in watched_ids:
                     nuevos.add(m['id'])
-    # c) Películas que superan el 30% de búsquedas
+    print('[DEBUG] paso 3')
     total_searches = sum(s.get('count', 1) for s in searches)
     for s in searches:
         if total_searches > 0 and s.get('count', 1) / total_searches >= 0.3:
             m = tmdb.get_movie_details(s['movie_id'])
-            if m and m.get('id') not in watched_ids:
+            if m and m.get('id') is not None and m.get('id') not in watched_ids:
                 nuevos.add(m['id'])
-    # 3. Combinar actuales y nuevos (máx. 70)
+    print('[DEBUG] paso 4')
     ids_actuales = set(m['id'] for m in actuales)
     todos_ids = list(ids_actuales | nuevos)
-    # 4. Obtener detalles de todas las películas
     todas_peliculas = []
+    cache = load_movie_cache()
     for mid in todos_ids:
-        m = tmdb.get_movie_details(mid)
+        m = get_movie_details_with_cache(tmdb, mid, cache)
         if m and m.get('id') not in watched_ids:
             todas_peliculas.append(m)
-    # 5. Calcular score y seleccionar las 50 mejores
+    print('[DEBUG] paso 5')
     scored = [(m, score_movie(m, tmdb, watched_ids, ratings, searches, patterns)) for m in todas_peliculas]
     scored.sort(key=lambda x: x[1], reverse=True)
     universo = [m for m, s in scored[:50]]
+    print('[DEBUG] paso 6')
+    print("Universo de recomendaciones:")
+    for m, s in scored[:50]:
+        print(f"{m.get('title', 'Unknown')} (ID: {m.get('id')}) - Score: {s:.2f}")
+    # Guardar universo y top_15_ids en user_data.json si user_id está disponible
+    if user_id:
+        try:
+            from datetime import datetime
+            with open(USER_DATA_PATH, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            if user_id in data:
+                data[user_id]['universo'] = universo
+                # Guardar los 15 primeros por puntuación (solo id)
+                top15 = [m.get('id') for m, s in scored[:15] if m.get('id') is not None]
+                if 'top_15_ids' not in data[user_id] or not isinstance(data[user_id]['top_15_ids'], list):
+                    data[user_id]['top_15_ids'] = top15
+                else:
+                    data[user_id]['top_15_ids'] = top15
+                # Guardar campo last_changes con fecha/hora ISO
+                data[user_id]['last_changes'] = datetime.now().isoformat()
+                with open(USER_DATA_PATH, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Error guardando universo en user_data.json: {e}")
+
+# Funciones de caché global
+def load_movie_cache():
+    if os.path.exists(MOVIE_CACHE_PATH):
+        with open(MOVIE_CACHE_PATH, 'r', encoding='utf-8') as f:
+            try:
+                return json.load(f)
+            except Exception:
+                return {}
+    return {}
+
+def filter_movie_fields(details):
+    # Extraer director y actores principales de credits
+    director = None
+    actors = []
+    credits = details.get('credits', {})
+    # Director (solo uno)
+    if 'crew' in credits:
+        for crew in credits['crew']:
+            if crew.get('job') == 'Director':
+                director = crew.get('name')
+                break
+    # Actores (solo los 3 más importantes)
+    if 'cast' in credits:
+        actors = [cast.get('name') for cast in credits['cast'][:3]]
+    # production_countries solo name
+    countries = details.get('production_countries', [])
+    countries_names = [c.get('name') for c in countries if c.get('name')]
+    # production_companies solo id y name
+    companies = details.get('production_companies', [])
+    companies_id_name = [
+        {'id': comp.get('id'), 'name': comp.get('name')}
+        for comp in companies if comp.get('id') and comp.get('name')
+    ]
+    return {
+        'id': details.get('id'),
+        'title': details.get('title'),
+        'vote_average': details.get('vote_average'),
+        'popularity': details.get('popularity'),
+        'director': director,
+        'actors': actors,
+        'genres': details.get('genres'),
+        'original_language': details.get('original_language'),
+        'production_countries': countries_names,
+        'production_companies': companies_id_name,
+    }
+
+def save_movie_cache(cache):
+    # Guardar solo los campos requeridos bajo el id
+    unique = {}
+    for k, v in cache.items():
+        if k is not None and v.get('title'):
+            unique[str(k)] = v
+    with open(MOVIE_CACHE_PATH, 'w', encoding='utf-8') as f:
+        json.dump(unique, f, ensure_ascii=False, indent=2)
+
+def get_movie_details_with_cache(tmdb_client, movie_id, cache):
+    key = str(movie_id)
+    if key in cache:
+        return cache[key]
+    details = tmdb_client.get_movie_details(movie_id)
+    filtered = filter_movie_fields(details)
+    # Evitar duplicados por título e id
+    for v in cache.values():
+        if v.get('title') == filtered.get('title'):
+            # Si el título ya existe, no lo añadimos de nuevo
+            return v
+    cache[key] = filtered
+    save_movie_cache(cache)
+    return filtered
+
+    global universo
+    actuales = universo.copy() if universo else []
+    nuevos = set()
+    # a) Similares a películas valoradas
+    for r in ratings:
+        movie_id = r.get('movie_id')
+        if movie_id:
+            similares = tmdb.get_similar_movies(movie_id)
+            for m in similares:
+                if m.get('id') not in watched_ids:
+                    nuevos.add(m['id'])
+    for cat, threshold, max_count in [('directors', 0.40, 5), ('actors', 0.40, 5), ('genres', 0.30, 5)]:
+        if cat in patterns and sum(patterns[cat].values()) > 0:
+            destacados = [k for k, v in patterns.get(cat, {}).items() if v / sum(patterns[cat].values()) >= threshold]
+        else:
+            destacados = []
+        for nombre in destacados:
+            populares = tmdb.get_popular_by_pattern(cat, nombre, max_count)
+            for m in populares:
+                if m.get('id') not in watched_ids:
+                    nuevos.add(m['id'])
+    total_searches = sum(s.get('count', 1) for s in searches)
+    for s in searches:
+        if total_searches > 0 and s.get('count', 1) / total_searches >= 0.3:
+            m = tmdb.get_movie_details(s['movie_id'])
+            if m and m.get('id') is not None and m.get('id') not in watched_ids:
+                nuevos.add(m['id'])
+    ids_actuales = set(m['id'] for m in actuales)
+    todos_ids = list(ids_actuales | nuevos)
+    todas_peliculas = []
+    cache = load_movie_cache()
+    for mid in todos_ids:
+        m = get_movie_details_with_cache(tmdb, mid, cache)
+        if m and m.get('id') not in watched_ids:
+            todas_peliculas.append(m)
+    scored = [(m, score_movie(m, tmdb, watched_ids, ratings, searches, patterns)) for m in todas_peliculas]
+    scored.sort(key=lambda x: x[1], reverse=True)
+    universo = [m for m, s in scored[:50]]
+    # Print del universo final con puntuaciones
+    print("Universo de recomendaciones:")
+    for m, s in scored[:50]:
+        print(f"{m.get('title', 'Unknown')} (ID: {m.get('id')}) - Score: {s:.2f}")
+    # Guardar universo y top_15_ids en user_data.json si user_id está disponible
+    if user_id:
+        try:
+            from datetime import datetime
+            with open(USER_DATA_PATH, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            if user_id in data:
+                data[user_id]['universo'] = universo
+                # Guardar los 15 primeros por puntuación (solo id)
+                data[user_id]['top_15_ids'] = [m.get('id') for m, s in scored[:15] if m.get('id') is not None]
+                # Guardar campo last_changes con fecha/hora ISO
+                data[user_id]['last_changes'] = datetime.now().isoformat()
+                with open(USER_DATA_PATH, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Error guardando universo en user_data.json: {e}", file=sys.stderr)
 def enrich_single_pattern(profile_patterns, movie_id, weight, tmdb):
     """
     Efficiently update profile_patterns for a single movie.
@@ -100,10 +259,10 @@ def show_recommendations_page(tmdb: TMDBClient):
     show_ai_recommendations(tmdb)
 
 def show_ai_recommendations(tmdb: TMDBClient):
-    # 1. Obtener el user_id primero
+    # Obtener el user_id y cargar el JSON solo una vez
     user_id = get_user_id()
     st.markdown(f'**User ID activo:** `{user_id}`')
-    # 2. Abrir el JSON y acceder al perfil solo con la clave correcta
+    data = None
     profile = None
     try:
         with open(USER_DATA_PATH, 'r', encoding='utf-8') as f:
@@ -114,120 +273,64 @@ def show_ai_recommendations(tmdb: TMDBClient):
             st.warning(f'No existe perfil para el usuario: {user_id}')
     except Exception as e:
         st.warning(f'Error al acceder a user_data.json: {e}')
-    # 3. Acceder a languages solo si existe el perfil
-    languages = profile.get('profile_patterns', {}).get('languages', {}) if profile else {}
-    st.markdown(f"**Languages en perfil:** {languages}")
-    # Mostrar el top 50 en pantalla debajo del in progress
+    st.markdown(f"**Languages en perfil (ID: {user_id}):** {profile.get('profile_patterns', {}).get('languages', {}) if profile else 'N/A'}")
     top_50_lines = []
-    if len(universo) > 0:
-        for m in universo[:50]:
-            s = score_movie(m, tmdb, watched_ids, ratings, searches, patterns)
-            top_50_lines.append(f"{m.get('title', 'Unknown')} (ID: {m.get('id')}) - Score: {s:.2f}")
-        st.code('\n'.join(top_50_lines), language='text')
+    if profile:
+        patterns = profile.get('profile_patterns', {'directors': {}, 'actors': {}, 'countries': {}, 'genres': {}, 'companies': {}, 'languages': {}})
+        searches = profile.get('searches', [])
+        ratings = profile.get('ratings', [])
+        preferences = profile.get('preferences', [])
+        watched_ids = set(r['movie_id'] for r in ratings)
+        # Si existe universo en el perfil, renderizar directamente
+        universo_guardado = profile.get('universo', [])
+        if universo_guardado:
+            st.code('\n'.join([f"{m.get('title', 'Unknown')} (ID: {m.get('id')})" for m in universo_guardado[:50]]), language='text')
+        else:
+            actualizar_universo(tmdb, watched_ids, ratings, searches, patterns, preferences, user_id)
+            if len(universo) > 0:
+                st.code('\n'.join([f"{m.get('title', 'Unknown')} (ID: {m.get('id')}) - Score: {score_movie(m, tmdb, watched_ids, ratings, searches, patterns):.2f}" for m in universo[:50]]), language='text')
+            else:
+                st.warning('No hay películas en el universo de recomendaciones.')
+        # Enriquecer patrones con la última búsqueda y valoración
+        from recommendations import enrich_single_pattern
+        if profile.get('searches'):
+            last_search = profile['searches'][-1]
+            movie_id = last_search.get('movie_id')
+            patterns = enrich_single_pattern(patterns, movie_id, 0.5, tmdb)
+        if profile.get('ratings'):
+            last_rating = profile['ratings'][-1]
+            movie_id = last_rating.get('movie_id')
+            weight = float(last_rating.get('rating', 0)) / 10
+            patterns = enrich_single_pattern(patterns, movie_id, weight, tmdb)
+        data[user_id]['profile_patterns'] = patterns
+        try:
+            with open(USER_DATA_PATH, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Error saving enriched profile: {e}")
+        st.info("The following movies have been selected based on your recent searches.")
+        with st.spinner("Loading AI recommendations ..."):
+            rated_ids = set(r['movie_id'] for r in ratings)
+            watched_ids = rated_ids.copy()
+            recommended = []
+            for r in ratings:
+                movie_id = r.get('movie_id')
+                if movie_id:
+                    similar = tmdb.get_similar_movies(movie_id)
+                    if similar:
+                        recommended.extend(similar)
+            seen = set()
+            unique_recommended = []
+            for m in recommended:
+                if m['id'] not in seen:
+                    seen.add(m['id'])
+                    unique_recommended.append(m)
+            from datetime import datetime, timedelta
+            now = datetime.now()
     else:
-        st.warning('No hay películas en el universo de recomendaciones.')
+        st.warning('No hay perfil cargado, no se puede mostrar recomendaciones.')
     st.markdown('### IA Recommendations')
     st.info('in progress...')
-    print("[DEBUG] Entrando en IA recommendations...")
-    user_id = get_user_id()
-    print(f"[DEBUG] user_id detectado: {user_id}")
-    st.markdown(f"<span style='color:orange'>[DEBUG] user_id detectado: {user_id}</span>", unsafe_allow_html=True)
-    data = None
-    try:
-        with open(USER_DATA_PATH, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-    except Exception as e:
-        print(f"[ERROR] No se pudo cargar user_data.json: {e}")
-        st.markdown(f"<span style='color:red'>[ERROR] No se pudo cargar user_data.json: {e}</span>", unsafe_allow_html=True)
-    if not user_id or not data or user_id not in data:
-        print(f"[ERROR] No se encontró data para el usuario: {user_id}")
-        st.markdown(f"<span style='color:red'>[ERROR] No se encontró data para el usuario: {user_id}</span>", unsafe_allow_html=True)
-        st.markdown(f"<span style='color:red'>[DEBUG] Claves en user_data.json: {list(data.keys()) if data else 'None'}</span>", unsafe_allow_html=True)
-        return
-    profile = data[user_id]
-    print(f"[DEBUG] Perfil cargado para usuario {user_id}: {profile.keys()}")
-    st.markdown(f"<span style='color:orange'>[DEBUG] Perfil cargado para usuario {user_id}: {list(profile.keys())}</span>", unsafe_allow_html=True)
-    patterns = profile.get('profile_patterns', {'directors': {}, 'actors': {}, 'countries': {}, 'genres': {}, 'companies': {}, 'languages': {}})
-    searches = profile.get('searches', [])
-    ratings = profile.get('ratings', [])
-    preferences = profile.get('preferences', [])
-    watched_ids = set(r['movie_id'] for r in ratings)
-    print(f"[DEBUG] Universo antes de actualizar: {len(universo)}")
-    actualizar_universo(tmdb, watched_ids, ratings, searches, patterns, preferences)
-    print(f"[DEBUG] Universo después de actualizar: {len(universo)}")
-    if len(universo) > 0:
-        print("TOP 50 películas por score:")
-        for m in universo[:50]:
-            s = score_movie(m, tmdb, watched_ids, ratings, searches, patterns)
-            print(f"{m.get('title', 'Unknown')} (ID: {m.get('id')}) - Score: {s}")
-    else:
-        print("[ERROR] El universo de películas está vacío.")
-    import json
-    def load_user_data():
-        try:
-            with open(USER_DATA_PATH, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except Exception:
-            return {}
-
-
-    # ...existing code...
-    user_id = get_user_id()
-    data = load_user_data()
-    if not user_id or user_id not in data:
-        st.warning("No user data found.")
-        return
-    profile = data[user_id]
-    # Always update profile_patterns before recommendations
-    patterns = data[user_id].get('profile_patterns', {
-        'directors': {}, 'actors': {}, 'countries': {}, 'genres': {}, 'companies': {}, 'languages': {}
-    })
-    # Enriquecer patrones con la última búsqueda y valoración
-    from recommendations import enrich_single_pattern
-    if profile.get('searches'):
-        last_search = profile['searches'][-1]
-        movie_id = last_search.get('movie_id')
-        patterns = enrich_single_pattern(patterns, movie_id, 0.5, tmdb)
-    if profile.get('ratings'):
-        last_rating = profile['ratings'][-1]
-        movie_id = last_rating.get('movie_id')
-        weight = float(last_rating.get('rating', 0)) / 10
-        patterns = enrich_single_pattern(patterns, movie_id, weight, tmdb)
-    data[user_id]['profile_patterns'] = patterns
-    try:
-        with open(USER_DATA_PATH, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-    except Exception as e:
-        print(f"Error saving enriched profile: {e}")
-
-    # You should also update profile_patterns right after any code that adds a search or rating elsewhere in your app (e.g. after adding a new search or rating in app.py or other modules).
-    searches = profile.get('searches', [])
-    ratings = profile.get('ratings', [])
-    preferences = profile.get('preferences', [])
-    patterns = data[user_id].get('profile_patterns', {})
-    st.info("The following movies have been selected based on your recent searches.")
-    with st.spinner("Loading AI recommendations ..."):
-        # Gather candidate movies
-        rated_ids = set(r['movie_id'] for r in ratings)
-        watched_ids = rated_ids.copy()
-        # Solo usar SIMILARES de películas vistas/valoradas
-        recommended = []
-        for r in ratings:
-            movie_id = r.get('movie_id')
-            if movie_id:
-                similar = tmdb.get_similar_movies(movie_id)
-                if similar:
-                    recommended.extend(similar)
-        # Remove duplicates
-        seen = set()
-        unique_recommended = []
-        for m in recommended:
-            if m['id'] not in seen:
-                seen.add(m['id'])
-                unique_recommended.append(m)
-        # Scoring system
-        from datetime import datetime, timedelta
-        now = datetime.now()
 
 def score_movie(movie, tmdb, watched_ids, ratings, searches, patterns):
     score = 0

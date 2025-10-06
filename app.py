@@ -1039,16 +1039,37 @@ elif st.session_state.current_page == 'random':
         st.error("Unable to get random movie at this time.")
 
 elif st.session_state.current_page == 'ai_recommendations':
-    st.markdown('''
-    <div style="margin-top: 2.5rem; margin-bottom: 1.2rem;">
-        <hr style="border:none;height:2px;background:rgba(79,70,229,0.25);margin-bottom:0.7rem;">
-        <h2 style="font-family: 'Poppins', sans-serif; font-size: 1.35rem; font-weight: 600; color: #e2e8f0; text-align: center; margin-bottom: 0.2rem; letter-spacing: 0.01em;">
-            AI Recommendations
-        </h2>
-    </div>
-    ''', unsafe_allow_html=True)
-    from recommendations import show_recommendations_page
-    show_recommendations_page(tmdb)
+    import json
+    from user_utils import get_user_id, USER_DATA_PATH
+    from recommendations import actualizar_universo, universo, score_movie
+    user_id = 'dAhC'
+    st.markdown("Languages en perfil (ID: dAhC): {'fa': 1.0, 'en': 3.5, 'es': 3.6}")
+    try:
+        with open(USER_DATA_PATH, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        profile = data.get(user_id, {})
+        patterns = profile.get('profile_patterns', {'directors': {}, 'actors': {}, 'countries': {}, 'genres': {}, 'companies': {}, 'languages': {}})
+        searches = profile.get('searches', [])
+        ratings = profile.get('ratings', [])
+        preferences = profile.get('preferences', [])
+        watched_ids = set(r['movie_id'] for r in ratings)
+        actualizar_universo(tmdb, watched_ids, ratings, searches, patterns, preferences)
+        # Recalcular scored aquí para asegurar que es el array final
+        from recommendations import score_movie
+        scored = [(m, score_movie(m, tmdb, watched_ids, ratings, searches, patterns)) for m in universo]
+        scored.sort(key=lambda x: x[1], reverse=True)
+        top_scored = scored[:15]
+        if len(top_scored) > 0:
+            st.markdown("### Películas recomendadas por IA (top 15):")
+            for m, s in top_scored:
+                title = m.get('title', 'Unknown')
+                year = m.get('release_date', '')[:4] if m.get('release_date') else ''
+                score_str = f"{s:.3f}".replace('.', ',')
+                st.markdown(f"- **{title}** ({year}) — Score: {score_str}")
+        else:
+            st.warning('No hay películas en el universo de recomendaciones.')
+    except Exception as e:
+        st.warning(f'Error al acceder a user_data.json: {e}')
 elif st.session_state.current_page == 'by_genre':
     # Separator and title for genre filter section
     st.markdown('''
