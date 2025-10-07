@@ -1041,31 +1041,56 @@ elif st.session_state.current_page == 'random':
 elif st.session_state.current_page == 'ai_recommendations':
     import json
     from user_utils import get_user_id, USER_DATA_PATH
-    from recommendations import actualizar_universo, universo, score_movie
-    user_id = 'dAhC'
-    st.markdown("Languages en perfil (ID: dAhC): {'fa': 1.0, 'en': 3.5, 'es': 3.6}")
+    from recommendations import actualizar_universo, universe, score_movie
+
+    st.markdown('''
+        <div style="margin-top: 2.5rem; margin-bottom: 1.2rem;">
+            <hr style="border:none;height:2px;background:rgba(79,70,229,0.25);margin-bottom:0.7rem;">
+            <h2 style="font-family: 'Poppins', sans-serif; font-size: 1.35rem; font-weight: 600; color: #e2e8f0; text-align: center; letter-spacing: 0.01em;">
+                Top 15 AI Recommendations
+            </h2>
+        </div>
+        ''', unsafe_allow_html=True)
+    
+    user_id = get_user_id()
+
     try:
+        from datetime import datetime
         with open(USER_DATA_PATH, 'r', encoding='utf-8') as f:
             data = json.load(f)
         profile = data.get(user_id, {})
-        patterns = profile.get('profile_patterns', {'directors': {}, 'actors': {}, 'countries': {}, 'genres': {}, 'companies': {}, 'languages': {}})
-        searches = profile.get('searches', [])
-        ratings = profile.get('ratings', [])
-        preferences = profile.get('preferences', [])
-        watched_ids = set(r['movie_id'] for r in ratings)
-        actualizar_universo(tmdb, watched_ids, ratings, searches, patterns, preferences, user_id)
-        # Recalcular scored aquí para asegurar que es el array final
-        from recommendations import score_movie
-        scored = [(m, score_movie(m, tmdb, watched_ids, ratings, searches, patterns)) for m in universo]
-        scored.sort(key=lambda x: x[1], reverse=True)
-        top_scored = scored[:15]
-        if len(top_scored) > 0:
-            st.markdown("### Películas recomendadas por IA (top 15):")
-            for m, s in top_scored:
-                title = m.get('title', 'Unknown')
-                year = m.get('release_date', '')[:4] if m.get('release_date') else ''
-                score_str = f"{s:.3f}".replace('.', ',')
-                st.markdown(f"- **{title}** ({year}) — Score: {score_str}")
+        universe = profile.get('universe', None)
+        last_update = profile.get('universe_last_update', None)
+        today = datetime.now().date().isoformat()
+        needs_recalc = (universe is None or len(universe) == 0 or last_update != today)
+        if needs_recalc:
+            with st.spinner('We are working to offer you the best movies...'):
+                patterns = profile.get('profile_patterns', {'directors': {}, 'actors': {}, 'countries': {}, 'genres': {}, 'companies': {}, 'languages': {}})
+                searches = profile.get('searches', [])
+                ratings = profile.get('ratings', [])
+                preferences = profile.get('preferences', [])
+                watched_ids = set(r['movie_id'] for r in ratings)
+                actualizar_universo(tmdb, watched_ids, ratings, searches, patterns, preferences, user_id)
+                # Recargar datos actualizados
+                with open(USER_DATA_PATH, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                profile = data.get(user_id, {})
+                universe = profile.get('universe', [])
+        from recommendations import load_movie_cache, get_movie_details_with_cache
+        cache = load_movie_cache()
+        st.markdown("""
+        <div style='text-align: center; margin-top:0; margin-bottom:70px;'>
+        This is a selection of movies tailored to your tastes based on your profile and interactions. Enjoy exploring these recommendations!
+        </div>
+        """, unsafe_allow_html=True)
+        movies = []
+        for mid, score in universe[:15]:
+            m = get_movie_details_with_cache(tmdb, mid, cache)
+            if m:
+                m['score'] = score
+                movies.append(m)
+        if movies:
+            display_movies(movies, "Recommended for You")
         else:
             st.warning('No hay películas en el universo de recomendaciones.')
     except Exception as e:
@@ -1168,4 +1193,4 @@ elif st.session_state.current_page == 'by_genre':
         with st.spinner(f"Loading {selected_genre} movies..."):
             genre_movies = tmdb.discover_movies([selected_genre_id])
         # Show only 6 movies
-        display_movies(genre_movies[:6], f"")
+        display_movies(genre_movies[:15], f"")

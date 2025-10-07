@@ -8,8 +8,6 @@ def get_user_id(suffix=None):
     key = f"get_user_id{suffix}" if suffix else "get_user_id"
     intentos = st.session_state.get("user_id_intentos", 0)
     user_id = streamlit_js_eval(js_expressions='localStorage.getItem("moviematch_user_id")', key=key)
-    print(f"[DEBUG get_user_id] Valor obtenido de localStorage: {user_id}")
-    st.markdown(f"<span style='color:orange'>[DEBUG get_user_id] Valor obtenido de localStorage: {user_id}</span>", unsafe_allow_html=True)
     if not user_id:
         if intentos < 3:
             st.session_state["user_id_intentos"] = intentos + 1
@@ -22,6 +20,4 @@ def get_user_id(suffix=None):
     else:
         st.session_state["user_id_intentos"] = 0
     st.session_state.user_id = user_id
-    print(f"[DEBUG get_user_id] user_id final: {user_id}")
-    st.markdown(f"<span style='color:orange'>[DEBUG get_user_id] user_id final: {user_id}</span>", unsafe_allow_html=True)
     return user_id

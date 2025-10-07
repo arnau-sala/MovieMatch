@@ -3608,5 +3608,1428 @@
         "name": "Les Films du Griffon"
       }
     ]
+  },
+  "3074": {
+    "id": 3074,
+    "title": "The Ghost of Frankenstein",
+    "vote_average": 5.8,
+    "popularity": 0.7947,
+    "director": "Erle C. Kenton",
+    "actors": [
+      "Cedric Hardwicke",
+      "Ralph Bellamy",
+      "Lionel Atwill"
+    ],
+    "genres": [
+      {
+        "id": 27,
+        "name": "Horror"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "United States of America"
+    ],
+    "production_companies": [
+      {
+        "id": 33,
+        "name": "Universal Pictures"
+      }
+    ]
+  },
+  "3076": {
+    "id": 3076,
+    "title": "Frankenstein Meets the Wolf Man",
+    "vote_average": 6.2,
+    "popularity": 1.1053,
+    "director": "Roy William Neill",
+    "actors": [
+      "Lon Chaney Jr.",
+      "Bela Lugosi",
+      "Patric Knowles"
+    ],
+    "genres": [
+      {
+        "id": 27,
+        "name": "Horror"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "United States of America"
+    ],
+    "production_companies": [
+      {
+        "id": 33,
+        "name": "Universal Pictures"
+      }
+    ]
+  },
+  "3077": {
+    "id": 3077,
+    "title": "Son of Frankenstein",
+    "vote_average": 6.7,
+    "popularity": 1.0482,
+    "director": "Rowland V. Lee",
+    "actors": [
+      "Basil Rathbone",
+      "Boris Karloff",
+      "Bela Lugosi"
+    ],
+    "genres": [
+      {
+        "id": 27,
+        "name": "Horror"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "United States of America"
+    ],
+    "production_companies": [
+      {
+        "id": 33,
+        "name": "Universal Pictures"
+      }
+    ]
+  },
+  "286984": {
+    "id": 286984,
+    "title": "Carnaval en el trópico",
+    "vote_average": 6.875,
+    "popularity": 1.7159,
+    "director": "Carlos Villatoro",
+    "actors": [
+      "Cantinflas",
+      "Manuel Medel",
+      "Agustín Isunza"
+    ],
+    "genres": [
+      {
+        "id": 35,
+        "name": "Comedy"
+      }
+    ],
+    "original_language": "es",
+    "production_countries": [
+      "Mexico"
+    ],
+    "production_companies": []
+  },
+  "1552": {
+    "id": 1552,
+    "title": "Parenthood",
+    "vote_average": 6.684,
+    "popularity": 4.1918,
+    "director": "Ron Howard",
+    "actors": [
+      "Steve Martin",
+      "Mary Steenburgen",
+      "Dianne Wiest"
+    ],
+    "genres": [
+      {
+        "id": 35,
+        "name": "Comedy"
+      },
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 10749,
+        "name": "Romance"
+      },
+      {
+        "id": 10751,
+        "name": "Family"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "United States of America"
+    ],
+    "production_companies": [
+      {
+        "id": 33,
+        "name": "Universal Pictures"
+      },
+      {
+        "id": 23,
+        "name": "Imagine Entertainment"
+      }
+    ]
+  },
+  "787": {
+    "id": 787,
+    "title": "Mr. & Mrs. Smith",
+    "vote_average": 6.686,
+    "popularity": 8.8061,
+    "director": "Doug Liman",
+    "actors": [
+      "Brad Pitt",
+      "Angelina Jolie",
+      "Vince Vaughn"
+    ],
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 35,
+        "name": "Comedy"
+      },
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 53,
+        "name": "Thriller"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "Switzerland",
+      "United States of America"
+    ],
+    "production_companies": [
+      {
+        "id": 508,
+        "name": "Regency Enterprises"
+      },
+      {
+        "id": 10104,
+        "name": "New Regency Pictures"
+      },
+      {
+        "id": 491,
+        "name": "Summit Entertainment"
+      },
+      {
+        "id": 433,
+        "name": "Weed Road Pictures"
+      },
+      {
+        "id": 1171,
+        "name": "Epsilon Motion Pictures"
+      }
+    ]
+  },
+  "792": {
+    "id": 792,
+    "title": "Platoon",
+    "vote_average": 7.745,
+    "popularity": 7.773,
+    "director": "Oliver Stone",
+    "actors": [
+      "Charlie Sheen",
+      "Willem Dafoe",
+      "Tom Berenger"
+    ],
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 10752,
+        "name": "War"
+      },
+      {
+        "id": 28,
+        "name": "Action"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "United Kingdom",
+      "United States of America"
+    ],
+    "production_companies": [
+      {
+        "id": 469,
+        "name": "Hemdale Film Corporation"
+      },
+      {
+        "id": 16775,
+        "name": "Arnold Kopelson Productions"
+      }
+    ]
+  },
+  "370172": {
+    "id": 370172,
+    "title": "No Time to Die",
+    "vote_average": 7.354,
+    "popularity": 8.851,
+    "director": "Cary Joji Fukunaga",
+    "actors": [
+      "Daniel Craig",
+      "Léa Seydoux",
+      "Rami Malek"
+    ],
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 53,
+        "name": "Thriller"
+      },
+      {
+        "id": 12,
+        "name": "Adventure"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "United Kingdom",
+      "United States of America"
+    ],
+    "production_companies": [
+      {
+        "id": 7576,
+        "name": "EON Productions"
+      },
+      {
+        "id": 21,
+        "name": "Metro-Goldwyn-Mayer"
+      }
+    ]
+  },
+  "3103": {
+    "id": 3103,
+    "title": "House of Frankenstein",
+    "vote_average": 6.0,
+    "popularity": 4.4429,
+    "director": "Erle C. Kenton",
+    "actors": [
+      "Boris Karloff",
+      "Lon Chaney Jr.",
+      "J. Carrol Naish"
+    ],
+    "genres": [
+      {
+        "id": 27,
+        "name": "Horror"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "United States of America"
+    ],
+    "production_companies": [
+      {
+        "id": 33,
+        "name": "Universal Pictures"
+      }
+    ]
+  },
+  "3105": {
+    "id": 3105,
+    "title": "Frankenstein: The True Story",
+    "vote_average": 7.5,
+    "popularity": 0.5432,
+    "director": "Jack Smight",
+    "actors": [
+      "James Mason",
+      "Leonard Whiting",
+      "David McCallum"
+    ],
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 27,
+        "name": "Horror"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "United States of America"
+    ],
+    "production_companies": [
+      {
+        "id": 33,
+        "name": "Universal Pictures"
+      }
+    ]
+  },
+  "3107": {
+    "id": 3107,
+    "title": "Destroy All Monsters",
+    "vote_average": 6.872,
+    "popularity": 3.519,
+    "director": "Ishirō Honda",
+    "actors": [
+      "Akira Kubo",
+      "Jun Tazaki",
+      "Yukiko Kobayashi"
+    ],
+    "genres": [
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      },
+      {
+        "id": 28,
+        "name": "Action"
+      }
+    ],
+    "original_language": "ja",
+    "production_countries": [
+      "Japan"
+    ],
+    "production_companies": [
+      {
+        "id": 882,
+        "name": "TOHO"
+      },
+      {
+        "id": 104646,
+        "name": "Tokyo Laboratory"
+      }
+    ]
+  },
+  "3111": {
+    "id": 3111,
+    "title": "A Star Is Born",
+    "vote_average": 7.1,
+    "popularity": 2.2138,
+    "director": "George Cukor",
+    "actors": [
+      "Judy Garland",
+      "James Mason",
+      "Jack Carson"
+    ],
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 10402,
+        "name": "Music"
+      },
+      {
+        "id": 10749,
+        "name": "Romance"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "United States of America"
+    ],
+    "production_companies": [
+      {
+        "id": 1321,
+        "name": "Transcona Enterprises"
+      },
+      {
+        "id": 174,
+        "name": "Warner Bros. Pictures"
+      }
+    ]
+  },
+  "3116": {
+    "id": 3116,
+    "title": "Midnight Cowboy",
+    "vote_average": 7.508,
+    "popularity": 2.5438,
+    "director": "John Schlesinger",
+    "actors": [
+      "Jon Voight",
+      "Dustin Hoffman",
+      "Sylvia Miles"
+    ],
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "United States of America"
+    ],
+    "production_companies": [
+      {
+        "id": 1323,
+        "name": "Florin Productions"
+      },
+      {
+        "id": 1324,
+        "name": "Jerome Hellman Productions"
+      },
+      {
+        "id": 60,
+        "name": "United Artists"
+      }
+    ]
+  },
+  "521007": {
+    "id": 521007,
+    "title": "Superintelligence",
+    "vote_average": 5.969,
+    "popularity": 2.2128,
+    "director": "Ben Falcone",
+    "actors": [
+      "Melissa McCarthy",
+      "James Corden",
+      "Bobby Cannavale"
+    ],
+    "genres": [
+      {
+        "id": 35,
+        "name": "Comedy"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      },
+      {
+        "id": 10749,
+        "name": "Romance"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "United States of America"
+    ],
+    "production_companies": [
+      {
+        "id": 87017,
+        "name": "On the Day"
+      },
+      {
+        "id": 174,
+        "name": "Warner Bros. Pictures"
+      },
+      {
+        "id": 12,
+        "name": "New Line Cinema"
+      },
+      {
+        "id": 53152,
+        "name": "Creative Wealth Media Finance"
+      }
+    ]
+  },
+  "3122": {
+    "id": 3122,
+    "title": "Lady Frankenstein",
+    "vote_average": 5.471,
+    "popularity": 1.1693,
+    "director": "Mel Welles",
+    "actors": [
+      "Joseph Cotten",
+      "Rosalba Neri",
+      "Paul Müller"
+    ],
+    "genres": [
+      {
+        "id": 27,
+        "name": "Horror"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      }
+    ],
+    "original_language": "it",
+    "production_countries": [
+      "Italy"
+    ],
+    "production_companies": [
+      {
+        "id": 5712,
+        "name": "Condor International Productions"
+      },
+      {
+        "id": 1950,
+        "name": "New World Pictures"
+      }
+    ]
+  },
+  "818": {
+    "id": 818,
+    "title": "Austin Powers in Goldmember",
+    "vote_average": 5.997,
+    "popularity": 5.0213,
+    "director": "Jay Roach",
+    "actors": [
+      "Mike Myers",
+      "Beyoncé",
+      "Seth Green"
+    ],
+    "genres": [
+      {
+        "id": 35,
+        "name": "Comedy"
+      },
+      {
+        "id": 80,
+        "name": "Crime"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "United States of America"
+    ],
+    "production_companies": [
+      {
+        "id": 595,
+        "name": "Eric's Boy"
+      },
+      {
+        "id": 12,
+        "name": "New Line Cinema"
+      },
+      {
+        "id": 598,
+        "name": "Team Todd"
+      },
+      {
+        "id": 52943,
+        "name": "Gratitude International"
+      },
+      {
+        "id": 15888,
+        "name": "Moving Pictures"
+      }
+    ]
+  },
+  "3124": {
+    "id": 3124,
+    "title": "The Evil of Frankenstein",
+    "vote_average": 6.126,
+    "popularity": 0.7103,
+    "director": "Freddie Francis",
+    "actors": [
+      "Peter Cushing",
+      "Peter Woodthorpe",
+      "Duncan Lamont"
+    ],
+    "genres": [
+      {
+        "id": 27,
+        "name": "Horror"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "United Kingdom"
+    ],
+    "production_companies": [
+      {
+        "id": 1314,
+        "name": "Hammer Film Productions"
+      }
+    ]
+  },
+  "3127": {
+    "id": 3127,
+    "title": "The Revenge of Frankenstein",
+    "vote_average": 6.591,
+    "popularity": 2.3964,
+    "director": "Terence Fisher",
+    "actors": [
+      "Peter Cushing",
+      "Francis Matthews",
+      "Eunice Gayson"
+    ],
+    "genres": [
+      {
+        "id": 27,
+        "name": "Horror"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "United Kingdom"
+    ],
+    "production_companies": [
+      {
+        "id": 1314,
+        "name": "Hammer Film Productions"
+      }
+    ]
+  },
+  "3131": {
+    "id": 3131,
+    "title": "Gangs of New York",
+    "vote_average": 7.315,
+    "popularity": 5.7009,
+    "director": "Martin Scorsese",
+    "actors": [
+      "Leonardo DiCaprio",
+      "Daniel Day-Lewis",
+      "Cameron Diaz"
+    ],
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 36,
+        "name": "History"
+      },
+      {
+        "id": 80,
+        "name": "Crime"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "United States of America",
+      "Italy"
+    ],
+    "production_companies": [
+      {
+        "id": 14,
+        "name": "Miramax"
+      },
+      {
+        "id": 9195,
+        "name": "Touchstone Pictures"
+      },
+      {
+        "id": 7380,
+        "name": "Initial Entertainment Group"
+      },
+      {
+        "id": 7381,
+        "name": "Alberto Grimaldi Productions"
+      }
+    ]
+  },
+  "577340": {
+    "id": 577340,
+    "title": "Welcome to Acapulco",
+    "vote_average": 5.5,
+    "popularity": 1.02,
+    "director": "Guillermo Iván",
+    "actors": [
+      "Mike Kingsbaker",
+      "Ana Serradilla",
+      "William Baldwin"
+    ],
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 35,
+        "name": "Comedy"
+      },
+      {
+        "id": 53,
+        "name": "Thriller"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "Bulgaria",
+      "Mexico",
+      "United States of America"
+    ],
+    "production_companies": [
+      {
+        "id": 96115,
+        "name": "Open Frames"
+      },
+      {
+        "id": 82042,
+        "name": "Golden Ceiba Productions"
+      },
+      {
+        "id": 96114,
+        "name": "Global Group"
+      }
+    ]
+  },
+  "417853": {
+    "id": 417853,
+    "title": "Zonga, el ángel diabólico",
+    "vote_average": 5.7,
+    "popularity": 2.9435,
+    "director": "Juan Orol",
+    "actors": [
+      "María Esquivel",
+      "Víctor Junco",
+      "Jaime Fernández"
+    ],
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 10749,
+        "name": "Romance"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "Mexico"
+    ],
+    "production_companies": [
+      {
+        "id": 77685,
+        "name": "España Sono Films"
+      }
+    ]
+  },
+  "73027": {
+    "id": 73027,
+    "title": "Across the Bridge",
+    "vote_average": 6.7,
+    "popularity": 3.3829,
+    "director": "Ken Annakin",
+    "actors": [
+      "Rod Steiger",
+      "David Knight",
+      "Marla Landi"
+    ],
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 53,
+        "name": "Thriller"
+      },
+      {
+        "id": 80,
+        "name": "Crime"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "United Kingdom"
+    ],
+    "production_companies": [
+      {
+        "id": 364,
+        "name": "The Rank Organisation"
+      }
+    ]
+  },
+  "432709": {
+    "id": 432709,
+    "title": "Morir A Mi Manera",
+    "vote_average": 5.0,
+    "popularity": 0.4953,
+    "director": "Sergio Goyri",
+    "actors": [
+      "Mario Almada",
+      "Rodolfo Amezcua",
+      "Armando Coria"
+    ],
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 80,
+        "name": "Crime"
+      },
+      {
+        "id": 18,
+        "name": "Drama"
+      }
+    ],
+    "original_language": "es",
+    "production_countries": [
+      "Mexico"
+    ],
+    "production_companies": [
+      {
+        "id": 8165,
+        "name": "Televicine"
+      },
+      {
+        "id": 85036,
+        "name": "goyri y asociados"
+      }
+    ]
+  },
+  "11338": {
+    "id": 11338,
+    "title": "Into the Night",
+    "vote_average": 6.529,
+    "popularity": 2.8124,
+    "director": "John Landis",
+    "actors": [
+      "Jeff Goldblum",
+      "Michelle Pfeiffer",
+      "Dan Aykroyd"
+    ],
+    "genres": [
+      {
+        "id": 53,
+        "name": "Thriller"
+      },
+      {
+        "id": 35,
+        "name": "Comedy"
+      },
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 80,
+        "name": "Crime"
+      },
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 10749,
+        "name": "Romance"
+      }
+    ],
+    "original_language": "en",
+    "production_countries": [
+      "United States of America"
+    ],
+    "production_companies": [
+      {
+        "id": 33,
+        "name": "Universal Pictures"
+      }
+    ]
+  },
+  "3146": {
+    "id": 3146,
+    "title": "The War of the Gargantuas",
+    "vote_average": 6.4,
+    "popularity": 2.3748,
+    "director": "Ishirō Honda",
+    "actors": [
+      "Kenji Sahara",
+      "Kumi Mizuno",
+      "Russ Tamblyn"
+    ],
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 27,
+        "name": "Horror"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      }
+    ],
+    "original_language": "ja",
+    "production_countries": [
+      "Japan",
+      "United States of America"
+    ],
+    "production_companies": [
+      {
+        "id": 882,
+        "name": "TOHO"
+      },
+      {
+        "id": 1333,
+        "name": "Benedict Pictures Corp."
+      },
+      {
+        "id": 8409,
+        "name": "United Productions of America"
+      },
+      {
+        "id": 1344,
+        "name": "Henry G. Saperstein Enterprises Inc."
+      },
+      {
+        "id": 104646,
+        "name": "Tokyo Laboratory"
+      }
+    ]
+  },
+  "16387": {
+    "id": 16387,
+    "title": "Daleks' Invasion Earth: 2150 A.D.",
+    "vote_average": 6.1,
+    "popularity": 1.7103,
+    "genres": [
+      {
+        "id": 10751,
+        "name": "Family"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      },
+      {
+        "id": 12,
+        "name": "Adventure"
+      }
+    ],
+    "release_date": "1966-08-05"
+  },
+  "15370": {
+    "id": 15370,
+    "title": "The Cat Returns",
+    "vote_average": 7.126,
+    "popularity": 5.4616,
+    "genres": [
+      {
+        "id": 12,
+        "name": "Adventure"
+      },
+      {
+        "id": 14,
+        "name": "Fantasy"
+      },
+      {
+        "id": 16,
+        "name": "Animation"
+      },
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 10751,
+        "name": "Family"
+      }
+    ],
+    "release_date": "2002-07-19"
+  },
+  "15384": {
+    "id": 15384,
+    "title": "Red Cliff II",
+    "vote_average": 7.317,
+    "popularity": 4.1728,
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 12,
+        "name": "Adventure"
+      },
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 36,
+        "name": "History"
+      },
+      {
+        "id": 10752,
+        "name": "War"
+      }
+    ],
+    "release_date": "2009-01-07"
+  },
+  "15394": {
+    "id": 15394,
+    "title": "Owning Mahowny",
+    "vote_average": 6.74,
+    "popularity": 3.4096,
+    "genres": [
+      {
+        "id": 80,
+        "name": "Crime"
+      },
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 53,
+        "name": "Thriller"
+      }
+    ],
+    "release_date": "2003-05-02"
+  },
+  "244772": {
+    "id": 244772,
+    "title": "The Skeleton Twins",
+    "vote_average": 6.639,
+    "popularity": 3.9834,
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      }
+    ],
+    "release_date": "2014-06-05"
+  },
+  "21039": {
+    "id": 21039,
+    "title": "Rogue Trader",
+    "vote_average": 5.9,
+    "popularity": 1.6283,
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 36,
+        "name": "History"
+      },
+      {
+        "id": 53,
+        "name": "Thriller"
+      }
+    ],
+    "release_date": "1999-06-25"
+  },
+  "3068": {
+    "id": 3068,
+    "title": "Frankenstein",
+    "vote_average": 6.9,
+    "popularity": 2.3172,
+    "genres": [
+      {
+        "id": 27,
+        "name": "Horror"
+      },
+      {
+        "id": 10770,
+        "name": "TV Movie"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      }
+    ],
+    "release_date": "1973-01-16"
+  },
+  "381006": {
+    "id": 381006,
+    "title": "The Specialist",
+    "vote_average": 4.6,
+    "popularity": 0.8528,
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 28,
+        "name": "Action"
+      }
+    ],
+    "release_date": "2016-02-12"
+  },
+  "11349": {
+    "id": 11349,
+    "title": "Cape Fear",
+    "vote_average": 7.453,
+    "popularity": 4.1663,
+    "genres": [
+      {
+        "id": 53,
+        "name": "Thriller"
+      },
+      {
+        "id": 18,
+        "name": "Drama"
+      }
+    ],
+    "release_date": "1962-04-12"
+  },
+  "3160": {
+    "id": 3160,
+    "title": "Frankenstein Conquers the World",
+    "vote_average": 6.7,
+    "popularity": 3.8095,
+    "genres": [
+      {
+        "id": 27,
+        "name": "Horror"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      }
+    ],
+    "release_date": "1965-08-08"
+  },
+  "3162": {
+    "id": 3162,
+    "title": "Blackenstein",
+    "vote_average": 3.1,
+    "popularity": 0.9019,
+    "genres": [
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      },
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 27,
+        "name": "Horror"
+      }
+    ],
+    "release_date": "1973-08-03"
+  },
+  "242780": {
+    "id": 242780,
+    "title": "Dragonard",
+    "vote_average": 3.8,
+    "popularity": 0.385,
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 36,
+        "name": "History"
+      }
+    ],
+    "release_date": "1987-05-12"
+  },
+  "3165": {
+    "id": 3165,
+    "title": "Frankenstein Island",
+    "vote_average": 3.3,
+    "popularity": 2.5761,
+    "genres": [
+      {
+        "id": 27,
+        "name": "Horror"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      }
+    ],
+    "release_date": "1981-11-27"
+  },
+  "3166": {
+    "id": 3166,
+    "title": "Frankenstein Meets the Space Monster",
+    "vote_average": 4.6,
+    "popularity": 0.7524,
+    "genres": [
+      {
+        "id": 27,
+        "name": "Horror"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      }
+    ],
+    "release_date": "1965-09-22"
+  },
+  "612": {
+    "id": 612,
+    "title": "Munich",
+    "vote_average": 7.1,
+    "popularity": 3.7583,
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 36,
+        "name": "History"
+      },
+      {
+        "id": 53,
+        "name": "Thriller"
+      }
+    ],
+    "release_date": "2005-12-23"
+  },
+  "3176": {
+    "id": 3176,
+    "title": "Battle Royale",
+    "vote_average": 7.282,
+    "popularity": 8.2603,
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 53,
+        "name": "Thriller"
+      },
+      {
+        "id": 28,
+        "name": "Action"
+      }
+    ],
+    "release_date": "2000-12-16"
+  },
+  "616": {
+    "id": 616,
+    "title": "The Last Samurai",
+    "vote_average": 7.597,
+    "popularity": 8.8684,
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 10752,
+        "name": "War"
+      }
+    ],
+    "release_date": "2003-12-05"
+  },
+  "11379": {
+    "id": 11379,
+    "title": "The Adventures of Buckaroo Banzai Across the 8th Dimension",
+    "vote_average": 5.986,
+    "popularity": 2.1437,
+    "genres": [
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      },
+      {
+        "id": 35,
+        "name": "Comedy"
+      },
+      {
+        "id": 12,
+        "name": "Adventure"
+      },
+      {
+        "id": 10749,
+        "name": "Romance"
+      }
+    ],
+    "release_date": "1984-08-10"
+  },
+  "21619": {
+    "id": 21619,
+    "title": "King of the Ants",
+    "vote_average": 5.9,
+    "popularity": 1.7587,
+    "genres": [
+      {
+        "id": 80,
+        "name": "Crime"
+      },
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 53,
+        "name": "Thriller"
+      }
+    ],
+    "release_date": "2004-07-28"
+  },
+  "633": {
+    "id": 633,
+    "title": "Soldier of Orange",
+    "vote_average": 7.068,
+    "popularity": 1.8302,
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 53,
+        "name": "Thriller"
+      },
+      {
+        "id": 10752,
+        "name": "War"
+      }
+    ],
+    "release_date": "1977-09-22"
+  },
+  "433792": {
+    "id": 433792,
+    "title": "Atrapados en la coca",
+    "vote_average": 5.7,
+    "popularity": 1.0658,
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 80,
+        "name": "Crime"
+      },
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 53,
+        "name": "Thriller"
+      }
+    ],
+    "release_date": "1990-01-01"
   }
 }

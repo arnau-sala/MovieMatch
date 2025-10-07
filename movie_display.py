@@ -9,14 +9,14 @@ def display_movies(movies, section_title):
         st.info("No movies found.")
         return
     cols = st.columns([0.01, 0.32, 0.01, 0.32, 0.01, 0.32, 0.01])
-    num_cards = min(len(movies), 6)
+    num_cards = min(len(movies), 15)
     for i in range(num_cards):
         movie = movies[i]
         col = cols[1 + (i % 3) * 2]
         with col:
             details = tmdb.get_movie_details(movie.get('id')) if movie.get('id') else movie
             title = details.get('title', movie.get('title', 'Unknown'))
-            year = details.get('release_date', '')[:4] if details.get('release_date') else ''
+            year = details.get('release_date', '')[:4] if details.get('release_date') else 'Not Released Yet'
             poster_url = details.get('poster_path')
             runtime = details.get('runtime')
             genres = details.get('genres')
