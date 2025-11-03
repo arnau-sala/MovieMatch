@@ -57,30 +57,22 @@ class TMDBClient:
             response.raise_for_status()
             try:
                 return response.json()
-            except ValueError as e:
-                print(f"Error al decodificar JSON: {e}")
+            except ValueError:
                 return {"error": "Respuesta no válida del servidor"}
         except requests.exceptions.Timeout:
-            print("Error: Tiempo de espera agotado al conectar con TMDB")
             return {"error": "timeout"}
         except requests.exceptions.ConnectionError:
-            print("Error: No se pudo conectar con TMDB. Verifica tu conexión a internet")
             return {"error": "connection_error"}
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 401:
-                print("Error: API Key inválida o expirada")
                 return {"error": "invalid_api_key"}
             elif e.response.status_code == 404:
-                print("Error: Recurso no encontrado")
                 return {"error": "not_found"}
             elif e.response.status_code == 429:
-                print("Error: Límite de peticiones excedido")
                 return {"error": "rate_limit"}
             else:
-                print(f"Error HTTP {e.response.status_code}: {e}")
                 return {"error": f"http_error_{e.response.status_code}"}
-        except requests.exceptions.RequestException as e:
-            print(f"Error general al realizar petición: {e}")
+        except requests.exceptions.RequestException:
             return {"error": "request_failed"}
     
     def search_movies(self, query: str, page: int = 1, include_adult: bool = False) -> List[Dict]:

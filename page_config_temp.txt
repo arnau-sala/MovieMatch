@@ -1,6 +1,0 @@
-﻿st.set_page_config(
-    page_title="MovieMatch - Descubre tu próxima película favorita",
-    page_icon="assets/icons/film.png",  # Favicon con icono PNG
-    layout="wide",
-    initial_sidebar_state="expanded"
-)

@@ -1,4 +1,43 @@
-﻿def save_search_and_update_patterns(user_id, data, tmdb):
+﻿import os
+import json
+import random
+import string
+import warnings
+import logging
+
+# Suprimir completamente cualquier output por terminal
+# Suprimir todos los warnings de Python
+warnings.filterwarnings('ignore')
+warnings.simplefilter('ignore')
+
+# Configurar logging para que no muestre nada
+logging.disable(logging.CRITICAL)
+# Configurar todos los loggers para que no muestren nada
+for logger_name in logging.Logger.manager.loggerDict:
+    logging.getLogger(logger_name).setLevel(logging.CRITICAL)
+    logging.getLogger(logger_name).disabled = True
+
+# Suprimir output de urllib3, requests y otras librerías comunes
+logging.getLogger('urllib3').setLevel(logging.CRITICAL)
+logging.getLogger('requests').setLevel(logging.CRITICAL)
+logging.getLogger('urllib3.connectionpool').setLevel(logging.CRITICAL)
+
+import streamlit as st
+from user_utils import get_user_id, USER_DATA_PATH
+
+# Inicializa el USER_ID al principio
+# SIEMPRE llamar a get_user_id() que lee primero de localStorage
+# get_user_id() siempre lee de localStorage primero, ignorando session_state
+user_id = get_user_id()
+
+# Asegurar que session_state tiene el valor correcto
+if user_id:
+    st.session_state["user_id"] = user_id
+
+USER_ID = st.session_state.get("user_id")
+
+
+def save_search_and_update_patterns(user_id, data, tmdb):
     from recommendations import enrich_single_pattern
     searches = data[user_id].get("searches", [])
     if searches:
@@ -14,14 +53,8 @@
     enriched = enrich_user_profile(data[user_id], tmdb)
     data[user_id]["profile_patterns"] = enriched
     save_user_data(data)
-user_id_global = None
 
-import os
-import json
-import random
-import string
-import streamlit as st
-from user_utils import get_user_id, USER_DATA_PATH
+
 
 def load_user_data():
     try:
@@ -33,39 +66,62 @@ def load_user_data():
         return {}
 
 def save_user_data(data):
-    import sys
-    print("[DEBUG] Guardando datos en user_data.json:", data, file=sys.stderr)
     with open(USER_DATA_PATH, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2)
 
 def get_user_profile():
-    user_id = get_user_id(suffix="_profile")
-    if not user_id:
-        with st.spinner("Cargando perfil de usuario..."):
+    if not USER_ID:
+        with st.spinner("Loading user profile..."):
             st.stop()
     data = load_user_data()
-    # Solo crear el usuario si no existe y solo al entrar
-    if user_id not in data:
-        data[user_id] = {"preferences": [], "searches": [], "ratings": []}
+    
+    # Si el perfil existe, cargarlo y loguear en consola
+    if USER_ID in data:
+        profile = data[USER_ID]
+        # Asegurar que todas las claves necesarias existan
+        if "preferences" not in profile:
+            profile["preferences"] = []
+        if "searches" not in profile:
+            profile["searches"] = []
+        if "ratings" not in profile:
+            profile["ratings"] = []
+        if "profile_patterns" not in profile:
+            profile["profile_patterns"] = {
+                "directors": {}, "actors": {}, "countries": {}, 
+                "genres": {}, "companies": {}, "languages": {}
+            }
+        
+        return profile
+    else:
+        # Crear nuevo perfil vacío
+        new_profile = {
+            "preferences": [],
+            "searches": [],
+            "ratings": [],
+            "profile_patterns": {
+                "directors": {}, "actors": {}, "countries": {},
+                "genres": {}, "companies": {}, "languages": {}
+            }
+        }
+        data[USER_ID] = new_profile
         save_user_data(data)
-    return data[user_id]
+        return new_profile
 
 def update_user_profile(profile):
-    user_id = get_user_id(suffix="_update_profile")
     data = load_user_data()
-    if user_id not in data:
+    if USER_ID not in data:
         # No crear usuario aquí, solo actualizar si existe
         return
-    data[user_id] = profile
+    data[USER_ID] = profile
     
     # Actualizar profile_patterns tras guardar búsqueda
     try:
         from recommendations import enrich_user_profile
         tmdb_api_key = os.getenv("TMDB_API_KEY")
         tmdb = TMDBClient(tmdb_api_key)
-        save_search_and_update_patterns(user_id, data, tmdb)
+        save_search_and_update_patterns(USER_ID, data, tmdb)
     except Exception as e:
-        print(f"Error updating profile_patterns after search: {e}")
+        pass
     save_user_data(data)
 import streamlit as st
 from dotenv import load_dotenv
@@ -78,6 +134,125 @@ st.set_page_config(
     page_icon="🎬",
     layout="wide"
 )
+
+# Añadir meta tags para suprimir advertencias de Permissions Policy
+# Y script para suprimir TODOS los mensajes de consola
+st.markdown("""
+<meta http-equiv="Permissions-Policy" content="ambient-light-sensor=(), battery=(), document-domain=(), layout-animations=(), legacy-image-formats=(), oversized-images=(), vr=(), wake-lock=()">
+<style>
+/* Ocultar cualquier texto que pueda aparecer del script */
+script[type="text/javascript"] + *,
+script + div:empty,
+.stMarkdown:has-text("});") {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    width: 0 !important;
+    overflow: hidden !important;
+}
+</style>
+<script>
+// Ocultar cualquier texto que aparezca visible con "});"
+(function() {
+    function hideScriptText() {
+        var walker = document.createTreeWalker(
+            document.body,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+        );
+        var node;
+        while (node = walker.nextNode()) {
+            if (node.textContent.trim() === '});' || node.textContent.trim() === '});') {
+                node.parentElement.style.display = 'none';
+            }
+        }
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hideScriptText);
+    } else {
+        hideScriptText();
+    }
+    setTimeout(hideScriptText, 100);
+})();
+</script>
+<script>
+(function() {
+    'use strict';
+    var noop = function() {};
+    var noopObj = {};
+    var emptyConsole = {
+        log: noop, warn: noop, error: noop, info: noop, debug: noop,
+        trace: noop, dir: noop, dirxml: noop, group: noop,
+        groupCollapsed: noop, groupEnd: noop, time: noop, timeEnd: noop,
+        timeLog: noop, count: noop, countReset: noop, table: noop,
+        assert: noop, clear: noop, profile: noop, profileEnd: noop,
+        timeStamp: noop, context: noopObj
+    };
+    try {
+        Object.defineProperty(window, 'console', {
+            value: emptyConsole,
+            writable: false,
+            configurable: false
+        });
+    } catch(e) {
+        Object.keys(window.console).forEach(function(key) {
+            if (typeof window.console[key] === 'function') {
+                window.console[key] = noop;
+            }
+        });
+        Object.freeze(window.console);
+    }
+    if (typeof console !== 'undefined') {
+        Object.keys(console).forEach(function(key) {
+            if (typeof console[key] === 'function') {
+                console[key] = noop;
+            }
+        });
+    }
+    var originalAppendChild = Node.prototype.appendChild;
+    Node.prototype.appendChild = function(child) {
+        if (child && child.nodeType === 1) {
+            var text = child.textContent || child.innerText || '';
+            if (text.includes('Evaluating:') || text.includes('Outputting')) {
+                return child;
+            }
+        }
+        return originalAppendChild.call(this, child);
+    };
+    var originalInsertBefore = Node.prototype.insertBefore;
+    Node.prototype.insertBefore = function(newNode, referenceNode) {
+        if (newNode && newNode.nodeType === 1) {
+            var text = newNode.textContent || newNode.innerText || '';
+            if (text.includes('Evaluating:') || text.includes('Outputting')) {
+                return newNode;
+            }
+        }
+        return originalInsertBefore.call(this, newNode, referenceNode);
+    };
+    function fixAutocomplete() {
+        var inputs = document.querySelectorAll('input[autocomplete=""]');
+        inputs.forEach(function(input) {
+            if (input.type === 'text' || input.type === 'search') {
+                input.setAttribute('autocomplete', 'off');
+            } else {
+                input.removeAttribute('autocomplete');
+            }
+        });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fixAutocomplete);
+    } else {
+        fixAutocomplete();
+    }
+    var observer = new MutationObserver(fixAutocomplete);
+    if (document.body) {
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+})();
+</script>
+""", unsafe_allow_html=True)
 
 # Load environment variables
 load_dotenv()
@@ -98,6 +273,17 @@ tmdb = init_tmdb_client()
 # Initialize session state
 if 'current_page' not in st.session_state:
     st.session_state.current_page = 'home'
+
+# Ensure the user's profile exists (create on first visit, load otherwise)
+# This ensures the profile is loaded immediately when the app starts
+if USER_ID:
+    try:
+        user_profile = get_user_profile()
+        # Store in session state for quick access
+        if "user_profile" not in st.session_state:
+            st.session_state["user_profile"] = user_profile
+    except Exception as e:
+        pass
 
 # Professional dark theme CSS styling
 st.markdown("""
@@ -274,6 +460,27 @@ st.markdown("""
     /* Remove default streamlit styling */
     .stApp > header {
         background: transparent;
+        display: none !important;
+        height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Reduce default top padding of Streamlit content container */
+    .block-container {
+        padding-top: 2rem !important;
+    }
+
+    /* Remove any extra top padding/margin from main view container */
+    [data-testid="stAppViewContainer"] .main {
+        padding-top: 2rem !important;
+        margin-top: 0 !important;
+    }
+
+    /* Ensure the very first element has some spacing */
+    .block-container > :first-child {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
     }
     
     /* Divider styling */
@@ -290,7 +497,7 @@ st.markdown("""
         font-size: 1.8rem;
         font-weight: 600;
         color: #ffffff;
-        margin-top: 10rem;
+        margin-top: 0.5rem;
         margin-bottom: 2rem;
         padding-bottom: 0.5rem;
         border-bottom: 1px solid #2a2a3a;
@@ -386,15 +593,17 @@ def show_profile_modal():
         "Action", "Adventure", "Animation", "Family", "Comedy", "Drama", "Horror",
         "Science Fiction", "Thriller", "Mystery", "Romance", "Documentary"
     ]
-    global user_id_global
-    if user_id_global is None:
-        user_id_global = get_user_id()
-    user_id = user_id_global
-    try:
-        data = load_user_data()
-        current_prefs = data.get(user_id, {}).get("preferences", [])
-    except Exception:
-        current_prefs = []
+
+    # Cargar preferencias desde el perfil en memoria si existe; si no, desde disco
+    profile_ctx = st.session_state.get("user_profile")
+    if profile_ctx is None:
+        try:
+            data = load_user_data()
+            profile_ctx = data.get(USER_ID, {"preferences": [], "searches": [], "ratings": []})
+            st.session_state["user_profile"] = profile_ctx
+        except Exception:
+            profile_ctx = {"preferences": [], "searches": [], "ratings": []}
+    current_prefs = profile_ctx.get("preferences", [])
     st.markdown("## Favorite Genres", unsafe_allow_html=True)
     st.markdown('<span style="color:#b3b3b3; font-size:0.98rem;">Click to select your favorite genres.</span>', unsafe_allow_html=True)
     selected_genres = []
@@ -409,7 +618,7 @@ def show_profile_modal():
                     checked = st.checkbox(
                         genre,
                         value=(genre in current_prefs),
-                        key=f"profile_genre_{genre}_{user_id}"
+                        key=f"profile_genre_{genre}_{USER_ID}"
                     )
                     if checked:
                         selected_genres.append(genre)
@@ -417,10 +626,14 @@ def show_profile_modal():
     if selected_genres and set(selected_genres) != set(current_prefs):
         try:
             data = load_user_data()
-            if user_id not in data:
-                data[user_id] = {"preferences": [], "searches": [], "ratings": []}
-            data[user_id]["preferences"] = selected_genres
+            if USER_ID not in data:
+                data[USER_ID] = {"preferences": [], "searches": [], "ratings": []}
+            data[USER_ID]["preferences"] = selected_genres
             save_user_data(data)
+            # Refrescar sesión con el perfil actualizado
+            st.session_state["user_profile"] = data[USER_ID]
+            # Sincronizar sesión
+            st.session_state["user_profile"] = data[USER_ID]
         except Exception as e:
             st.error(f"Error saving preferences: {e}")
     st.markdown("---")
@@ -452,50 +665,58 @@ def show_profile_modal():
     if st.button("Save", key="profile_add_rating"):
         # Comprobación previa: mostrar el user_id si existe antes de guardar
         if selected_movie and selected_movie in movie_map:
-            movie = movie_map[selected_movie]
-            movie_id = movie['id']
-            title = movie['title']
-            # Solo obtener el user_id si ya existe en localStorage
-            
-            # Usar el user_id ya guardado en session_state si existe
-            user_id = user_id_global
-            if not user_id:
-                st.error("No se encontró el ID de usuario en session_state. Recarga la página o revisa la configuración del navegador.")
-                return
-            data = load_user_data()
-            profile = data.get(user_id, {"preferences": [], "searches": [], "ratings": []})
-            # Evitar duplicados: si ya existe una puntuación para ese movie_id, la actualizamos
-            ratings = profile.get("ratings", [])
-            found = False
-            for r in ratings:
-                if r.get("movie_id") == movie_id:
-                    r["rating"] = rating
-                    found = True
-                    break
-            if not found:
-                ratings.append({"movie_id": movie_id, "title": title, "rating": rating})
-            profile["ratings"] = ratings
-            data[user_id] = profile
-            tmdb_api_key = os.getenv("TMDB_API_KEY")
-            tmdb = TMDBClient(tmdb_api_key)
-            from recommendations import enrich_single_pattern
-            ratings = data[user_id].get("ratings", [])
-            if ratings:
-                last_rating = ratings[-1]
-                movie_id = last_rating.get("movie_id")
-                weight = float(last_rating.get("rating", 0)) / 10
-                patterns = data[user_id].get("profile_patterns", {
+            try:
+                movie = movie_map[selected_movie]
+                movie_id = movie['id']
+                title = movie['title']
+                
+                data = load_user_data()
+                if USER_ID not in data:
+                    data[USER_ID] = {"preferences": [], "searches": [], "ratings": []}
+                
+                profile = data.get(USER_ID, {"preferences": [], "searches": [], "ratings": []})
+                # Evitar duplicados: si ya existe una puntuación para ese movie_id, la actualizamos
+                ratings = profile.get("ratings", [])
+                found = False
+                for r in ratings:
+                    if r.get("movie_id") == movie_id:
+                        r["rating"] = rating
+                        found = True
+                        break
+                if not found:
+                    ratings.append({"movie_id": movie_id, "title": title, "rating": rating})
+                
+                profile["ratings"] = ratings
+                data[USER_ID] = profile
+                
+                # Enriquecer patrones con la película valorada
+                tmdb_api_key = os.getenv("TMDB_API_KEY")
+                tmdb = TMDBClient(tmdb_api_key)
+                from recommendations import enrich_single_pattern
+                patterns = data[USER_ID].get("profile_patterns", {
                     "directors": {}, "actors": {}, "countries": {}, "genres": {}, "companies": {}, "languages": {}
                 })
+                weight = float(rating) / 10
                 updated = enrich_single_pattern(patterns, movie_id, weight, tmdb)
-                data[user_id]["profile_patterns"] = updated
-            save_user_data(data)
+                data[USER_ID]["profile_patterns"] = updated
+                
+                save_user_data(data)
+                
+                # Refrescar sesión con el perfil actualizado
+                st.session_state["user_profile"] = data[USER_ID]
+                
+                # Resetear campos y mostrar mensaje de éxito
+                st.session_state["reset_search"] = True
+                st.session_state["reset_rating"] = True
+                st.success(f"Rating saved: {title} ({rating}/10)")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error saving rating: {e}")
         else:
-            st.warning("Select a valid movie before saving.")
+            st.warning("Please select a movie before saving.")
     # Show watched movies list
-    user_id = get_user_id(suffix="_list_ratings")
-    data = load_user_data()
-    profile = data.get(user_id, {"preferences": [], "searches": [], "ratings": []})
+    # Fuente única para listado: perfil en sesión (cargado al entrar al perfil)
+    profile = st.session_state.get("user_profile", {"preferences": [], "searches": [], "ratings": []})
     ratings = profile.get("ratings", [])
     if ratings:
         st.markdown("### Watched Movies List")
@@ -507,28 +728,41 @@ def show_profile_modal():
         styled_df = df_watched.style.set_properties(subset=["Rating"], **{"text-align": "left"})
         st.dataframe(styled_df, width=800)
 
-# Estado para mostrar pantalla de perfil
+# Estado para mostrar pantalla de perfil (inicializar una sola vez)
 if "show_profile" not in st.session_state:
     st.session_state["show_profile"] = False
-
 
 # --- Navegación entre Profile y Main Menu ---
-
-
-# --- Navegación entre Profile y Main Menu con cambio inmediato ---
-if "show_profile" not in st.session_state:
-    st.session_state["show_profile"] = False
-col_nav2, col_nav1 = st.columns([8, 1])
+col_feedback, col_nav2, col_nav1 = st.columns([1, 7, 1])
+with col_feedback:
+    st.markdown(
+        '<a href="https://github.com/arnau-sala/MovieMatch/issues/new" target="_blank" style="color: #94a3b8; text-decoration: underline; font-size: 0.85rem; font-weight: 400; font-family: Poppins, sans-serif; letter-spacing: 0.01em; opacity: 0.7;">Feedback</a>',
+        unsafe_allow_html=True
+    )
 with col_nav1:
     if st.session_state["show_profile"]:
         if st.button("Main Menu", key="btn_back_main"):
             st.session_state["show_profile"] = False
+            st.rerun()
     else:
-        if st.button("Profile", key="btn_profile"):
+        if st.button("Profile", key="btn_profile_top"):
             st.session_state["show_profile"] = True
+            # Recargar perfil desde disco al entrar en la vista de perfil
+            try:
+                if USER_ID:
+                    loaded = load_user_data().get(USER_ID, {"preferences": [], "searches": [], "ratings": []})
+                    st.session_state["user_profile"] = loaded
+            except Exception:
+                pass
+            st.rerun()
 
 if st.session_state["show_profile"]:
     show_profile_modal()
+
+    if USER_ID == None:
+        USER_ID = get_user_id()
+    
+
     # Logic to exit profile (if needed)
     if st.session_state.get("volver_click", False):
         st.session_state["show_profile"] = False
@@ -548,29 +782,43 @@ if st.session_state["show_profile"]:
             <div style='color:#cbd5e1;font-size:1rem;'>
                 <p><strong>Your privacy and data security are our top priorities.</strong></p>
                 <ul style='margin-bottom:1.2rem;'>
-                    <li><strong>Anonymous & Confidential:</strong> All data is stored anonymously and securely. No personal information or identifiers are ever collected or linked to you.</li>
-                    <li><strong>Device Independence & Security:</strong> Each device and browser is completely independent. Your data is only stored locally and cannot be accessed from other devices or browsers. This method is the safest and means you never need to create an account—your data is never associated with any person.</li>
-                    <li><strong>Purpose of Data:</strong> The only reason your data is stored is to enable the AI-powered recommendation system to adapt to your preferences and improve your experience.</li>
+                    <li><strong>Anonymous & Confidential:</strong> All data is stored anonymously and securely. No personal information or identifiers are ever collected or linked to you. You are assigned a random 4-character alphanumeric ID that is stored only in your browser's local storage.</li>
+                    <li><strong>Device Independence & Security:</strong> Each device and browser is completely independent. Your data is only stored locally on your device in a JSON file and cannot be accessed from other devices or browsers. This method is the safest and means you never need to create an account—your data is never associated with any person.</li>
+                    <li><strong>Purpose of Data:</strong> The only reason your data is stored is to enable the personalized recommendation system ("For You" section) to adapt to your preferences and improve your movie discovery experience. The system analyzes your interactions to suggest movies tailored to your tastes.</li>
                     <li><strong>Types of Data Stored:</strong>
                         <ul>
-                            <li>Favorite genres (your selected movie genres)</li>
-                            <li>Searches made using the main page search bar</li>
-                            <li>Watched and rated movies</li>
+                            <li><strong>Favorite genres:</strong> Your selected movie genres from the Profile section</li>
+                            <li><strong>Search history:</strong> Movies you've searched for using the main page search bar, including search frequency and timing</li>
+                            <li><strong>Movie ratings:</strong> Movies you've watched and rated in the Profile section</li>
+                            <li><strong>Profile patterns:</strong> Automatically generated preferences based on your interactions, including:
+                                <ul>
+                                    <li>Directors you tend to watch</li>
+                                    <li>Actors you frequently see</li>
+                                    <li>Genres you prefer</li>
+                                    <li>Production countries you favor</li>
+                                    <li>Production companies you watch</li>
+                                    <li>Original languages you prefer</li>
+                                </ul>
+                            </li>
+                            <li><strong>Recommendation universe:</strong> A curated list of movie recommendations generated daily based on your profile patterns</li>
                         </ul>
                     </li>
-                    <li><strong>Freedom to Delete Your Data:</strong> You are always free to delete your data. To do so, simply remove the MovieMatch key from your browser's local storage (safe storage). <br><br>
+                    <li><strong>How Recommendations Work:</strong> The "For You" section uses your stored data to generate personalized recommendations. It analyzes your search patterns, ratings, and genre preferences to suggest movies you might enjoy. Recommendations are recalculated daily to keep them fresh and relevant.</li>
+                    <li><strong>Feedback Button:</strong> The "Feedback" link in the top-left corner allows you to report bugs, suggest features, or provide general feedback by creating an issue on our GitHub repository. This is completely optional and does not collect any personal data—you can choose to remain anonymous when submitting feedback.</li>
+                    <li><strong>Freedom to Delete Your Data:</strong> You are always free to delete your data. To do so, simply remove the MovieMatch key from your browser's local storage. <br><br>
                         <em>How to delete your data:</em>
                         <ul>
                             <li>Open your browser's developer tools (usually by pressing F12).</li>
                             <li>Go to the <strong>Application</strong> or <strong>Storage</strong> tab.</li>
                             <li>Find <strong>localStorage</strong> and look for the key named <strong>moviematch_user_id</strong>.</li>
-                            <li>Delete this key. All your data will be removed instantly.</li>
+                            <li>Delete this key. All your data will be removed instantly from the local JSON file.</li>
                         </ul>
-                        <span style='opacity:0.7;'>Note: Each time you visit the page, a new anonymous key will be created automatically.</span>
+                        <span style='opacity:0.7;'>Note: Each time you visit the page, a new anonymous key will be created automatically if one doesn't exist.</span>
                         <span style='opacity:0.7;'>Deleting your data only affects the current device and browser.</span>
                     </li>
+                    <li><strong>Data Storage Location:</strong> All your profile data is stored locally in a file called <code style='background:transparent;border:none;padding:0 0.4rem;color:#86efac;opacity:0.75;'>user_data.json</code> on the server/device where the application is running. This file is never shared or transmitted to external servers.</li>
                     <li><strong>No Third Parties & No Ads:</strong> There are no third-party services, trackers, or advertising on this website. Your data is never shared, sold, or used for any purpose other than providing personalized recommendations.</li>
-                    <li><strong>No Option to Deny Usage:</strong> The tool requires data to function. You cannot opt out of data usage, but you can always delete your information as described above.</li>
+                    <li><strong>No Option to Deny Usage:</strong> The tool requires data to function properly. You cannot opt out of data usage, but you can always delete your information as described above.</li>
                     <li><strong>Policy Updates:</strong> If the way your data is handled ever changes, this privacy policy will be updated to reflect those changes.</li>
                 </ul>
                 <p style='margin-top:1.2rem;'>Everything is handled with maximum security and anonymity.</p>
@@ -591,7 +839,7 @@ else:
             MOVIEMATCH
         </h1>
         <h2 style="color: #cbd5e1; font-size: 1.35rem; font-weight: 600; margin: 0.5rem 0 0 0;">
-            Descubre tu próxima película favorita con recomendaciones inteligentes
+            Discover your next favorite movie with intelligent recommendations
         </h2>
     </div>
     ''', unsafe_allow_html=True)
@@ -610,12 +858,11 @@ else:
         def similar(a, b):
             return difflib.SequenceMatcher(None, a, b).ratio()
 
-        user_id = get_user_id()
         data = load_user_data()
-        if user_id:
-            if user_id not in data:
-                data[user_id] = {"preferences": [], "searches": [], "ratings": []}
-            searches = data[user_id].get("searches", [])
+        if USER_ID:
+            if USER_ID not in data:
+                data[USER_ID] = {"preferences": [], "searches": [], "ratings": []}
+            searches = data[USER_ID].get("searches", [])
             best_match = None
             best_score = 0.0
             for entry in searches:
@@ -646,10 +893,10 @@ else:
             else:
                 term_to_save = render_name if render_name else search_query
                 searches.append({"term": term_to_save, "count": 1, "movie_id": render_id, "last_search": now_iso})
-            data[user_id]["searches"] = searches
+            data[USER_ID]["searches"] = searches
             # Enriquecer patrones solo con la última búsqueda
             from recommendations import enrich_single_pattern
-            patterns = data[user_id].get("profile_patterns", {
+            patterns = data[USER_ID].get("profile_patterns", {
                 "directors": {}, "actors": {}, "countries": {}, "genres": {}, "companies": {}, "languages": {}
             })
             last_search = searches[-1] if searches else None
@@ -658,7 +905,7 @@ else:
                 tmdb_api_key = os.getenv("TMDB_API_KEY")
                 tmdb_local = TMDBClient(tmdb_api_key)
                 updated = enrich_single_pattern(patterns, movie_id, 0.5, tmdb_local)
-                data[user_id]["profile_patterns"] = updated
+                data[USER_ID]["profile_patterns"] = updated
             save_user_data(data)
         results = tmdb.search_movies(search_query)
         filtered_results = [m for m in results if m.get('popularity', 0) > 2 and m.get('release_date')]
@@ -793,7 +1040,7 @@ else:
     with col5:
         nav_button("By Genre", "by_genre", "by_genre")
     with col6:
-        nav_button("AI Recommendations", "ai_recs", "ai_recommendations")
+        nav_button("For You", "ai_recs", "ai_recommendations")
     with col7:
         nav_button("Random Pick", "random", "random")
 
@@ -1039,42 +1286,39 @@ elif st.session_state.current_page == 'random':
         st.error("Unable to get random movie at this time.")
 
 elif st.session_state.current_page == 'ai_recommendations':
-    import json
-    from user_utils import get_user_id, USER_DATA_PATH
+
     from recommendations import actualizar_universo, universe, score_movie
 
     st.markdown('''
         <div style="margin-top: 2.5rem; margin-bottom: 1.2rem;">
             <hr style="border:none;height:2px;background:rgba(79,70,229,0.25);margin-bottom:0.7rem;">
             <h2 style="font-family: 'Poppins', sans-serif; font-size: 1.35rem; font-weight: 600; color: #e2e8f0; text-align: center; letter-spacing: 0.01em;">
-                Top 15 AI Recommendations
+                Top 15 For You
             </h2>
         </div>
         ''', unsafe_allow_html=True)
-    
-    user_id = get_user_id()
 
     try:
         from datetime import datetime
         with open(USER_DATA_PATH, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        profile = data.get(user_id, {})
+        profile = data.get(USER_ID, {})
         universe = profile.get('universe', None)
         last_update = profile.get('universe_last_update', None)
         today = datetime.now().date().isoformat()
         needs_recalc = (universe is None or len(universe) == 0 or last_update != today)
         if needs_recalc:
-            with st.spinner('We are working to offer you the best movies...'):
+            with st.spinner('Analyzing your data to provide the best recommendations. This may take a few minutes on first use, but will be much faster afterwards...'):
                 patterns = profile.get('profile_patterns', {'directors': {}, 'actors': {}, 'countries': {}, 'genres': {}, 'companies': {}, 'languages': {}})
                 searches = profile.get('searches', [])
                 ratings = profile.get('ratings', [])
                 preferences = profile.get('preferences', [])
                 watched_ids = set(r['movie_id'] for r in ratings)
-                actualizar_universo(tmdb, watched_ids, ratings, searches, patterns, preferences, user_id)
+                actualizar_universo(tmdb, watched_ids, ratings, searches, patterns, preferences, USER_ID)
                 # Recargar datos actualizados
                 with open(USER_DATA_PATH, 'r', encoding='utf-8') as f:
                     data = json.load(f)
-                profile = data.get(user_id, {})
+                profile = data.get(USER_ID, {})
                 universe = profile.get('universe', [])
         from recommendations import load_movie_cache, get_movie_details_with_cache
         cache = load_movie_cache()
@@ -1092,9 +1336,9 @@ elif st.session_state.current_page == 'ai_recommendations':
         if movies:
             display_movies(movies, "Recommended for You")
         else:
-            st.warning('No hay películas en el universo de recomendaciones.')
+            st.warning('No movies in the recommendations universe.')
     except Exception as e:
-        st.warning(f'Error al acceder a user_data.json: {e}')
+        st.warning(f'Error accessing user_data.json: {e}')
 elif st.session_state.current_page == 'by_genre':
     # Separator and title for genre filter section
     st.markdown('''

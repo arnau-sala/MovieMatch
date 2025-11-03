@@ -1,5 +1,11 @@
-# Datos de usuario privados
+# Datos de usuario privados y sensibles
 user_data.json
+movie_cache.json
+*.env
+!.env.example
+
+# Windows
+desktop.ini
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

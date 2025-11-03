@@ -83,7 +83,6 @@ universe = []
 
 def actualizar_universo(tmdb, watched_ids, ratings, searches, patterns, preferencias, user_id):
     global universe
-    print('[DEBUG] step 1')
     current = universe.copy() if universe else []
     new_candidates = set()
     # a) Similar to rated movies
@@ -159,35 +158,33 @@ def actualizar_universo(tmdb, watched_ids, ratings, searches, patterns, preferen
                 json_str_compact = compact_universe(json_str)
                 with open(USER_DATA_PATH, 'w', encoding='utf-8') as f:
                     f.write(json_str_compact)
-        except Exception as e:
-            print(f"Error saving universe in user_data.json: {e}")
+        except Exception:
+            pass
 import streamlit as st
 from utils import TMDBClient, format_movie_info, format_rating
-from user_utils import get_user_id
+
 from movie_display import display_movies
 
 
 def show_recommendations_page(tmdb: TMDBClient):
-    """Intelligent recommendations system page"""
+    """Personal recommendations system page"""
     show_ai_recommendations(tmdb)
 
 def show_ai_recommendations(tmdb: TMDBClient):
-    user_id = get_user_id()
-    st.markdown(f'**User ID activo:** `{user_id}`')
+    USER_ID = st.session_state.get("user_id")
     from datetime import datetime
     today = datetime.now().date().isoformat()
     # Cargar perfil
     try:
         with open(USER_DATA_PATH, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        profile = data.get(user_id, None)
-        print(f"[DEBUG] Perfil cargado para user_id {user_id}: {profile is not None}")
+        profile = data.get(USER_ID, None)
     except Exception as e:
         st.warning(f'Error al acceder a user_data.json: {e}')
         profile = None
 
     if not profile:
-        st.warning(f'No existe perfil para el usuario: {user_id}')
+        st.warning(f'No existe perfil para el usuario: {USER_ID}')
         return
 
     universe = profile.get('universe', [])
@@ -215,12 +212,12 @@ def show_ai_recommendations(tmdb: TMDBClient):
             ratings = profile.get('ratings', [])
             preferences = profile.get('preferences', [])
             watched_ids = set(r['movie_id'] for r in ratings)
-            actualizar_universo(tmdb, watched_ids, ratings, searches, patterns, preferences, user_id)
+            actualizar_universo(tmdb, watched_ids, ratings, searches, patterns, preferences, USER_ID)
             # Recargar perfil actualizado
             try:
                 with open(USER_DATA_PATH, 'r', encoding='utf-8') as f:
                     data = json.load(f)
-                profile = data.get(user_id, None)
+                profile = data.get(USER_ID, None)
             except Exception as e:
                 st.warning(f'Error al acceder a user_data.json tras recalcular: {e}')
                 return
