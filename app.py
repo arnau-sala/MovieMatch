@@ -28,16 +28,13 @@ from user_utils import get_user_id, USER_DATA_PATH
 # Inicializa el USER_ID al principio
 # SIEMPRE llamar a get_user_id() que lee primero de localStorage
 # get_user_id() siempre lee de localStorage primero, ignorando session_state
-def get_current_user_id():
-    """Obtiene el USER_ID actual, asegurándose de que esté inicializado"""
-    if "user_id" not in st.session_state or not st.session_state.get("user_id"):
-        user_id = get_user_id()
-        if user_id:
-            st.session_state["user_id"] = user_id
-    return st.session_state.get("user_id")
+user_id = get_user_id()
 
-# Inicializar USER_ID al inicio
-USER_ID = get_current_user_id()
+# Asegurar que session_state tiene el valor correcto
+if user_id:
+    st.session_state["user_id"] = user_id
+
+USER_ID = st.session_state.get("user_id")
 
 
 def save_search_and_update_patterns(user_id, data, tmdb):
@@ -73,18 +70,14 @@ def save_user_data(data):
         json.dump(data, f, indent=2)
 
 def get_user_profile():
-    # Asegurar que USER_ID esté actualizado
-    current_user_id = get_current_user_id()
-    if not current_user_id:
+    if not USER_ID:
         with st.spinner("Loading user profile..."):
             st.stop()
-        return {}
-    
     data = load_user_data()
     
     # Si el perfil existe, cargarlo y loguear en consola
-    if current_user_id in data:
-        profile = data[current_user_id]
+    if USER_ID in data:
+        profile = data[USER_ID]
         # Asegurar que todas las claves necesarias existan
         if "preferences" not in profile:
             profile["preferences"] = []
@@ -110,26 +103,23 @@ def get_user_profile():
                 "genres": {}, "companies": {}, "languages": {}
             }
         }
-        data[current_user_id] = new_profile
+        data[USER_ID] = new_profile
         save_user_data(data)
         return new_profile
 
 def update_user_profile(profile):
-    current_user_id = get_current_user_id()
-    if not current_user_id:
-        return
     data = load_user_data()
-    if current_user_id not in data:
+    if USER_ID not in data:
         # No crear usuario aquí, solo actualizar si existe
         return
-    data[current_user_id] = profile
+    data[USER_ID] = profile
     
     # Actualizar profile_patterns tras guardar búsqueda
     try:
         from recommendations import enrich_user_profile
         tmdb_api_key = os.getenv("TMDB_API_KEY")
         tmdb = TMDBClient(tmdb_api_key)
-        save_search_and_update_patterns(current_user_id, data, tmdb)
+        save_search_and_update_patterns(USER_ID, data, tmdb)
     except Exception as e:
         pass
     save_user_data(data)
@@ -286,8 +276,7 @@ if 'current_page' not in st.session_state:
 
 # Ensure the user's profile exists (create on first visit, load otherwise)
 # This ensures the profile is loaded immediately when the app starts
-current_user_id_init = get_current_user_id()
-if current_user_id_init:
+if USER_ID:
     try:
         user_profile = get_user_profile()
         # Store in session state for quick access
@@ -477,16 +466,16 @@ st.markdown("""
         margin: 0 !important;
     }
 
-        /* Reduce default top padding of Streamlit content container */
-        .block-container {
-            padding-top: 5rem !important;
-        }
-        
-        /* Remove any extra top padding/margin from main view container */
-        [data-testid="stAppViewContainer"] .main {
-            padding-top: 5rem !important;
-            margin-top: 0 !important;
-        }
+    /* Reduce default top padding of Streamlit content container */
+    .block-container {
+        padding-top: 2rem !important;
+    }
+
+    /* Remove any extra top padding/margin from main view container */
+    [data-testid="stAppViewContainer"] .main {
+        padding-top: 2rem !important;
+        margin-top: 0 !important;
+    }
 
     /* Ensure the very first element has some spacing */
     .block-container > :first-child {
@@ -600,12 +589,6 @@ from movie_display import display_movies
 
 def show_profile_modal():
     import streamlit as st
-    # Asegurar que tenemos un USER_ID válido
-    current_user_id = get_current_user_id()
-    if not current_user_id:
-        st.warning("Unable to load user profile. Please refresh the page.")
-        return
-    
     genre_list = [
         "Action", "Adventure", "Animation", "Family", "Comedy", "Drama", "Horror",
         "Science Fiction", "Thriller", "Mystery", "Romance", "Documentary"
@@ -616,7 +599,7 @@ def show_profile_modal():
     if profile_ctx is None:
         try:
             data = load_user_data()
-            profile_ctx = data.get(current_user_id, {"preferences": [], "searches": [], "ratings": []})
+            profile_ctx = data.get(USER_ID, {"preferences": [], "searches": [], "ratings": []})
             st.session_state["user_profile"] = profile_ctx
         except Exception:
             profile_ctx = {"preferences": [], "searches": [], "ratings": []}
@@ -635,7 +618,7 @@ def show_profile_modal():
                     checked = st.checkbox(
                         genre,
                         value=(genre in current_prefs),
-                        key=f"profile_genre_{genre}_{current_user_id}"
+                        key=f"profile_genre_{genre}_{USER_ID}"
                     )
                     if checked:
                         selected_genres.append(genre)
@@ -643,12 +626,14 @@ def show_profile_modal():
     if selected_genres and set(selected_genres) != set(current_prefs):
         try:
             data = load_user_data()
-            if current_user_id not in data:
-                data[current_user_id] = {"preferences": [], "searches": [], "ratings": []}
-            data[current_user_id]["preferences"] = selected_genres
+            if USER_ID not in data:
+                data[USER_ID] = {"preferences": [], "searches": [], "ratings": []}
+            data[USER_ID]["preferences"] = selected_genres
             save_user_data(data)
             # Refrescar sesión con el perfil actualizado
-            st.session_state["user_profile"] = data[current_user_id]
+            st.session_state["user_profile"] = data[USER_ID]
+            # Sincronizar sesión
+            st.session_state["user_profile"] = data[USER_ID]
         except Exception as e:
             st.error(f"Error saving preferences: {e}")
     st.markdown("---")
@@ -686,10 +671,10 @@ def show_profile_modal():
                 title = movie['title']
                 
                 data = load_user_data()
-                if current_user_id not in data:
-                    data[current_user_id] = {"preferences": [], "searches": [], "ratings": []}
+                if USER_ID not in data:
+                    data[USER_ID] = {"preferences": [], "searches": [], "ratings": []}
                 
-                profile = data.get(current_user_id, {"preferences": [], "searches": [], "ratings": []})
+                profile = data.get(USER_ID, {"preferences": [], "searches": [], "ratings": []})
                 # Evitar duplicados: si ya existe una puntuación para ese movie_id, la actualizamos
                 ratings = profile.get("ratings", [])
                 found = False
@@ -702,23 +687,23 @@ def show_profile_modal():
                     ratings.append({"movie_id": movie_id, "title": title, "rating": rating})
                 
                 profile["ratings"] = ratings
-                data[current_user_id] = profile
+                data[USER_ID] = profile
                 
                 # Enriquecer patrones con la película valorada
                 tmdb_api_key = os.getenv("TMDB_API_KEY")
                 tmdb = TMDBClient(tmdb_api_key)
                 from recommendations import enrich_single_pattern
-                patterns = data[current_user_id].get("profile_patterns", {
+                patterns = data[USER_ID].get("profile_patterns", {
                     "directors": {}, "actors": {}, "countries": {}, "genres": {}, "companies": {}, "languages": {}
                 })
                 weight = float(rating) / 10
                 updated = enrich_single_pattern(patterns, movie_id, weight, tmdb)
-                data[current_user_id]["profile_patterns"] = updated
+                data[USER_ID]["profile_patterns"] = updated
                 
                 save_user_data(data)
                 
                 # Refrescar sesión con el perfil actualizado
-                st.session_state["user_profile"] = data[current_user_id]
+                st.session_state["user_profile"] = data[USER_ID]
                 
                 # Resetear campos y mostrar mensaje de éxito
                 st.session_state["reset_search"] = True
@@ -764,9 +749,8 @@ with col_nav1:
             st.session_state["show_profile"] = True
             # Recargar perfil desde disco al entrar en la vista de perfil
             try:
-                current_user_id = get_current_user_id()
-                if current_user_id:
-                    loaded = load_user_data().get(current_user_id, {"preferences": [], "searches": [], "ratings": []})
+                if USER_ID:
+                    loaded = load_user_data().get(USER_ID, {"preferences": [], "searches": [], "ratings": []})
                     st.session_state["user_profile"] = loaded
             except Exception:
                 pass
@@ -774,6 +758,9 @@ with col_nav1:
 
 if st.session_state["show_profile"]:
     show_profile_modal()
+
+    if USER_ID == None:
+        USER_ID = get_user_id()
     
 
     # Logic to exit profile (if needed)
@@ -872,11 +859,10 @@ else:
             return difflib.SequenceMatcher(None, a, b).ratio()
 
         data = load_user_data()
-        current_user_id = get_current_user_id()
-        if current_user_id:
-            if current_user_id not in data:
-                data[current_user_id] = {"preferences": [], "searches": [], "ratings": []}
-            searches = data[current_user_id].get("searches", [])
+        if USER_ID:
+            if USER_ID not in data:
+                data[USER_ID] = {"preferences": [], "searches": [], "ratings": []}
+            searches = data[USER_ID].get("searches", [])
             best_match = None
             best_score = 0.0
             for entry in searches:
@@ -907,10 +893,10 @@ else:
             else:
                 term_to_save = render_name if render_name else search_query
                 searches.append({"term": term_to_save, "count": 1, "movie_id": render_id, "last_search": now_iso})
-            data[current_user_id]["searches"] = searches
+            data[USER_ID]["searches"] = searches
             # Enriquecer patrones solo con la última búsqueda
             from recommendations import enrich_single_pattern
-            patterns = data[current_user_id].get("profile_patterns", {
+            patterns = data[USER_ID].get("profile_patterns", {
                 "directors": {}, "actors": {}, "countries": {}, "genres": {}, "companies": {}, "languages": {}
             })
             last_search = searches[-1] if searches else None
@@ -919,7 +905,7 @@ else:
                 tmdb_api_key = os.getenv("TMDB_API_KEY")
                 tmdb_local = TMDBClient(tmdb_api_key)
                 updated = enrich_single_pattern(patterns, movie_id, 0.5, tmdb_local)
-                data[current_user_id]["profile_patterns"] = updated
+                data[USER_ID]["profile_patterns"] = updated
             save_user_data(data)
         results = tmdb.search_movies(search_query)
         filtered_results = [m for m in results if m.get('popularity', 0) > 2 and m.get('release_date')]
@@ -1314,13 +1300,9 @@ elif st.session_state.current_page == 'ai_recommendations':
 
     try:
         from datetime import datetime
-        current_user_id = get_current_user_id()
-        if not current_user_id:
-            st.warning("Unable to load recommendations. Please refresh the page.")
-            st.stop()
         with open(USER_DATA_PATH, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        profile = data.get(current_user_id, {})
+        profile = data.get(USER_ID, {})
         universe = profile.get('universe', None)
         last_update = profile.get('universe_last_update', None)
         today = datetime.now().date().isoformat()
@@ -1332,11 +1314,11 @@ elif st.session_state.current_page == 'ai_recommendations':
                 ratings = profile.get('ratings', [])
                 preferences = profile.get('preferences', [])
                 watched_ids = set(r['movie_id'] for r in ratings)
-                actualizar_universo(tmdb, watched_ids, ratings, searches, patterns, preferences, current_user_id)
+                actualizar_universo(tmdb, watched_ids, ratings, searches, patterns, preferences, USER_ID)
                 # Recargar datos actualizados
                 with open(USER_DATA_PATH, 'r', encoding='utf-8') as f:
                     data = json.load(f)
-                profile = data.get(current_user_id, {})
+                profile = data.get(USER_ID, {})
                 universe = profile.get('universe', [])
         from recommendations import load_movie_cache, get_movie_details_with_cache
         cache = load_movie_cache()
