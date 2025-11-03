@@ -7,6 +7,36 @@
 
 MovieMatch is an interactive web application developed with Streamlit that helps you discover perfect movies using the powerful API from The Movie Database (TMDB). With an intelligent recommendation system and a user-friendly interface, finding your next favorite movie has never been easier.
 
+## 🚀 Try It Now
+
+**[👉 Launch MovieMatch App](https://movie-matchr.streamlit.app/)**
+
+Access the app directly from your browser - no installation required!
+
+---
+
+## 🔒 Privacy & Data Policy
+
+**No Login Required - Anonymous & Secure**
+
+MovieMatch is designed to work without any registration or login. Here's how it works:
+
+- **Anonymous User ID**: When you first visit, you're automatically assigned a random 4-character alphanumeric ID (e.g., `dAhC`) that's stored only in your browser's local storage
+- **Local Data Storage**: All your data (favorite genres, search history, movie ratings, recommendation preferences) is stored locally on your device
+- **No Personal Information**: We never collect or store any personal information, email addresses, or identifying data
+- **Complete Control**: You can delete all your data at any time by removing the `moviematch_user_id` key from your browser's local storage (see Privacy Policy in the app for detailed instructions)
+- **Device-Specific**: Your data is tied only to the specific browser and device you're using - it cannot be accessed from other devices
+
+**Why We Store Data**: The only purpose of storing your interactions is to provide personalized movie recommendations in the "For You" section. The more you use the app, the better the recommendations become.
+
+**Important Security Note**: Even if someone clones, forks, or modifies this code repository, they **cannot** access or interfere with users of the official deployed app at https://movie-matchr.streamlit.app/. Each deployment is completely isolated:
+- Your data is stored only on the server where the official app is hosted
+- Modifying the code locally or deploying your own instance creates a completely separate application
+- No one can access your information through code modifications - data is server-specific and protected
+- The open-source nature of the code allows transparency and community improvements, but does not compromise user privacy
+
+For complete privacy details, see the Privacy Policy section in the app's Profile page.
+
 ## ✨ Main Features
 
 ### 🔍 Advanced Search
@@ -96,9 +126,15 @@ The application will automatically open in your browser at `http://localhost:850
 
 #### Deploy to Web (Make it Publicly Accessible)
 
-To make your app accessible from any browser without downloading the code, you can deploy it to a hosting service:
+**The app is already deployed and accessible at: [https://movie-matchr.streamlit.app/](https://movie-matchr.streamlit.app/)**
 
-##### Option 1: Streamlit Cloud (Recommended - Free & Easy)
+You can access it directly from any browser without downloading or installing anything!
+
+##### Deploy Your Own Instance
+
+If you want to deploy your own instance or host it elsewhere:
+
+**Streamlit Cloud (Recommended - Free & Easy)**
 
 1. Push your code to GitHub
 2. Go to [Streamlit Cloud](https://streamlit.io/cloud)
@@ -109,13 +145,7 @@ To make your app accessible from any browser without downloading the code, you c
 7. Add your `TMDB_API_KEY` as a secret in the app settings
 8. Click "Deploy" - your app will be live at `https://your-app-name.streamlit.app`
 
-**Benefits:**
-- ✅ Free hosting
-- ✅ Automatic deployments on git push
-- ✅ Easy setup (5 minutes)
-- ✅ No server management needed
-
-##### Option 2: Other Hosting Options
+**Other Hosting Options**
 
 - **Heroku**: Deploy with a `Procfile` and `requirements.txt`
 - **AWS/GCP/Azure**: Use container services or serverless options
