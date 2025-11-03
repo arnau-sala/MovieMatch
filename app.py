@@ -477,16 +477,16 @@ st.markdown("""
         margin: 0 !important;
     }
 
-    /* Reduce default top padding of Streamlit content container */
-    .block-container {
-        padding-top: 2rem !important;
-    }
-
-    /* Remove any extra top padding/margin from main view container */
-    [data-testid="stAppViewContainer"] .main {
-        padding-top: 2rem !important;
-        margin-top: 0 !important;
-    }
+        /* Reduce default top padding of Streamlit content container */
+        .block-container {
+            padding-top: 5rem !important;
+        }
+        
+        /* Remove any extra top padding/margin from main view container */
+        [data-testid="stAppViewContainer"] .main {
+            padding-top: 5rem !important;
+            margin-top: 0 !important;
+        }
 
     /* Ensure the very first element has some spacing */
     .block-container > :first-child {
